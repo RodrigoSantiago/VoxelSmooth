@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class Chunk {
 
-    private int[] blocks;
+    public int[] blocks;
     private int width, height, length;
 
     public int Width {
@@ -30,14 +30,23 @@ public class Chunk {
         this.length = length;
         blocks = new int[width * height * length];
     }
+    
+    public float GetFloat(int x, int y, int z) {
+        if (x < 0 || y < 0 || z < 0 || x >= width || y >= height || z >= length) return 0;
+        return blocks[x + y * width + z * width * height] / 1000f;
+    }
 
+    public int Get(int index) {
+        return blocks[index];
+    }
+    
     public int Get(int x, int y, int z) {
         if (x < 0 || y < 0 || z < 0 || x >= width || y >= height || z >= length) return 0;
         return blocks[x + y * width + z * width * height];
     }
     
     public bool GetSmooth(int x, int y, int z) {
-        return Get(x, y, z) != 0;
+        return Get(x, y, z) > 500;
     }
     
     public void Set(int x, int y, int z, int block) {
