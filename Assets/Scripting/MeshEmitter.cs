@@ -7,8 +7,13 @@ public class MeshEmitter {
     
     private List<Vector3> points = new List<Vector3>();
     private List<int> triangles = new List<int>();
+    private bool reduce;
+
     public MeshEmitter() {
-        
+        this.reduce = false;
+    }
+    public MeshEmitter(bool reduce) {
+        this.reduce = reduce;
     }
 
     private int contains(List<Vector3> points, Vector3 point) {
@@ -38,22 +43,31 @@ public class MeshEmitter {
     }
 
     public Mesh Build() {
-        List<Vector3> npoints = new List<Vector3>();
-        List<int> ntriangles = new List<int>();
-        for (int i = 0; i < triangles.Count; i++) {
-            int index = contains(npoints, points[triangles[i]]);
-            if (index == -1) {
-                npoints.Add(points[triangles[i]]);
-                ntriangles.Add(npoints.Count - 1);
-            } else {
-                ntriangles.Add(index);
-            }
-        }
         Mesh mesh = new Mesh();
-        var ver = npoints.ToArray();
-        var tri = ntriangles.ToArray();
-        mesh.vertices = ver;
-        mesh.triangles = tri;
+        
+        if (reduce) {
+            List<Vector3> npoints = new List<Vector3>();
+            List<int> ntriangles = new List<int>();
+            for (int i = 0; i < triangles.Count; i++) {
+                int index = contains(npoints, points[triangles[i]]);
+                if (index == -1) {
+                    npoints.Add(points[triangles[i]]);
+                    ntriangles.Add(npoints.Count - 1);
+                } else {
+                    ntriangles.Add(index);
+                }
+            }
+            var ver = npoints.ToArray();
+            var tri = ntriangles.ToArray();
+            mesh.vertices = ver;
+            mesh.triangles = tri;
+        } else {
+            var ver = points.ToArray();
+            var tri = triangles.ToArray();
+            mesh.vertices = ver;
+            mesh.triangles = tri;
+        }
+
         mesh.RecalculateBounds();
         mesh.RecalculateNormals();
         mesh.RecalculateTangents();

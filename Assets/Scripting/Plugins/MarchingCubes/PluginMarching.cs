@@ -3,9 +3,6 @@
 
  public class PluginMarching : MonoBehaviour, PluginGenerator {
 
-     public int width;
-     public int height;
-     public int length;
      public int brushSize;
      public bool showCubes;
      private bool pshowCubes;
@@ -18,9 +15,9 @@
      void Start() {
          chunk = ChunkOwner.chunk;//new Chunk(width, height, length);
          
-         for (int x = 0; x < width; x++) {
-             for (int y = 0; y < height; y++) {
-                 for (int z = 0; z < length; z++) {
+         for (int x = 0; x < chunk.Width; x++) {
+             for (int y = 0; y < chunk.Height; y++) {
+                 for (int z = 0; z < chunk.Length; z++) {
                      var obj = Instantiate(prefabPluginBtn, new Vector3(x, y, z), Quaternion.identity);
                      var btn = obj.GetComponent<PluginButton>(); 
                      btn.plugin = this;
@@ -44,19 +41,19 @@
      }
 
      public void SetPoint(int x, int y, int z, int v) {
-         chunk.Set(x, y, z, Mathf.Clamp(chunk.Get(x, y, z) + 125 * v, 0, 950));
+         chunk.Set(x, y, z, Mathf.Clamp(chunk.Get(x, y, z) + 143 * v, 0, 950));
          
          Recalculate();
      }
 
      public void Recalculate() {
-         var generator = new MarchingGenerator(width, height, length);
+         var generator = new MarchingGenerator2(chunk.Width, chunk.Height, chunk.Length);
          var emitter = new MeshEmitter();
          generator.Generate(chunk, emitter);
 
          var mesh = emitter.Build();
          Debug.Log("March p : " + mesh.GetIndexCount(0) / 3);
-         mesh = Torec.CatmullClark.Subdivide(mesh, 1);
+         //mesh = Torec.CatmullClark.Subdivide(mesh, 1);
          GetComponent<MeshFilter>().mesh = mesh;
          Debug.Log("March A : " + mesh.GetIndexCount(0) / 3);
 
@@ -67,9 +64,9 @@
 
          if (showCubes) {
              GetComponent<MeshRenderer>().enabled = false;
-             for (int x = 0; x < width; x++) {
-                 for (int y = 0; y < height; y++) {
-                     for (int z = 0; z < length; z++) {
+             for (int x = 0; x < chunk.Width; x++) {
+                 for (int y = 0; y < chunk.Height; y++) {
+                     for (int z = 0; z < chunk.Length; z++) {
                          if (chunk.Get(x, y, z) != 0) {
                              var obj = Instantiate(prefabCube, new Vector3(x, y, z), Quaternion.identity);
                              obj.transform.SetParent(transform, true);

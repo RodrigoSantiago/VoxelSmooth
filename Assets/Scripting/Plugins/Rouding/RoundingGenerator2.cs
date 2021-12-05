@@ -38,7 +38,7 @@ public class RoundingGenerator2 : MeshGenerator {
                 for (int z = 0; z < length; z++) {
                     if (!get(x, y, z)) continue;
                     
-                    EmitVertex(x, y, z);
+                    //EmitVertex(x, y, z);
                 }
             }
         }
@@ -47,6 +47,39 @@ public class RoundingGenerator2 : MeshGenerator {
         mesh = null;
     }
 
+    public void AddDebugPoint(int x, int y, int z, Off3D off, Vector3 point) {
+        Vector3 cp = new Vector3(x, y, z);
+        Vector3 mC = cp + point * 0.5f;
+        Vector3 m0 = mC + new Vector3(-.1f, -.1f, -.1f) * 0.25f;
+        Vector3 m1 = mC + new Vector3(0.1f, -.1f, -.1f) * 0.25f;
+        Vector3 m2 = mC + new Vector3(0.1f, 0.1f, -.1f) * 0.25f;
+        Vector3 m3 = mC + new Vector3(-.1f, 0.1f, -.1f) * 0.25f;
+        Vector3 m4 = mC + new Vector3(-.1f, -.1f, 0.1f) * 0.25f;
+        Vector3 m5 = mC + new Vector3(0.1f, -.1f, 0.1f) * 0.25f;
+        Vector3 m6 = mC + new Vector3(0.1f, 0.1f, 0.1f) * 0.25f;
+        Vector3 m7 = mC + new Vector3(-.1f, 0.1f, 0.1f) * 0.25f;
+        mesh.AddTriangle(m0, m1, m5);
+        mesh.AddTriangle(m0, m5, m4);
+        
+        mesh.AddTriangle(m1, m2, m6);
+        mesh.AddTriangle(m1, m6, m5);
+        
+        mesh.AddTriangle(m2, m3, m7);
+        mesh.AddTriangle(m2, m7, m6);
+        
+        mesh.AddTriangle(m3, m0, m4);
+        mesh.AddTriangle(m3, m4, m7);
+        
+        mesh.AddTriangle(m7, m5, m4);
+        mesh.AddTriangle(m7, m6, m5);
+        
+        mesh.AddTriangle(m3, m1, m0);
+        mesh.AddTriangle(m3, m2, m1);
+        
+        mesh.AddTriangle(cp, m2, m1);
+        mesh.AddTriangle(cp, m1, m2);
+    }
+    
     public void AddTriangle(int x, int y, int z, Vector3 p1, Vector3 p2, Vector3 p3, Off3D side) {
         Vector3 cp = new Vector3(x, y, z);
         p1 = p1 * 0.5f + cp;
@@ -75,113 +108,190 @@ public class RoundingGenerator2 : MeshGenerator {
         return data.GetSmooth(x + off.x, y + off.y, z + off.z);
     }
 
-    public float Lerp(float d1, float d2) {
-        float delta = Mathf.Abs(d2 - d1) < 0.0001f ? 0.5f : (0.5f - d1) / (d2 - d1);
+    public float Delta(float d1, float d2) {
+        float delta = 0;
+        if (d1 > 0.5f && d2 > 0.5f) {
+            d1 -= 0.5f;
+            d2 -= 0.5f;
+            delta = d1 / (d1 + d2);
+        } else if (d1 > 0.5f) {
+            delta = Mathf.Abs(d2 - d1) < 0.0001f ? 0.5f : (0.5f - d1) / (d2 - d1);
+        } else if (d2 > 0.5f) {
+            delta =  1 - (Mathf.Abs(d1 - d2) < 0.0001f ? 0.5f : (0.5f - d2) / (d1 - d2));
+        }
+        
+        return delta;
+    } 
+    
+    public float LerpDelta(float d1, float d2) {
+        return 1 + (Delta(d1, d2) - 0.5f) / 0.5f;
+    } 
+    
+    public float LerpDelta(float delta) {
         return 1 + (delta - 0.5f) / 0.5f;
     } 
     
     public void WriteInternalMesh(int x, int y, int z) {
-        bool locked = true;
         bool[] near = new bool[27];
         for (int i = 0; i < 27; i++) {
             near[i] = getNear(x, y, z, i);
-            if (!near[i]) locked = false;
         }
 
-        //if (locked) return;
-        float me = 1;//data.GetFloat(x, y, z);
         for (int i = 0; i < 27; i++) {
             var off = new Off3D(i);
             var point = off.vec3;
             var roundPoint = point;
-
-            float meX = 1;
-            float meY = 1;
-            float meZ = 1;
-            if (near[off]) {
+            float d1 = data.GetFloat(x, y, z);
+            
+            /*if (near[off]) {
                 // NEVER ROUND
                 
-            } else if (off.IsSide) {
-                roundPoint = WriteInternalSide(near, off);
-                float d1 = data.GetFloat(x, y, z);
+            } else */if (off.IsSide) {
+                roundPoint = point;//WriteInternalSide(near, off);
                 float d2 = data.GetFloat(x + off.x, y + off.y, z + off.z);
-                if (d1 >= 0.5 && d2 <= 0.5) {
-                    float delta = Mathf.Abs(d2 - d1) < 0.0001f ? 0.5f : (0.5f - d1) / (d2 - d1);
-                    me = 1 + (delta - 0.5f) / 0.5f;
+                if (d1 >= 0.5) {
+                    float dAxis = LerpDelta(d1, d2);
 
-                    if (off.x != 0) roundPoint.x *= me; // me over X
-                    if (off.y != 0) roundPoint.y *= me; // me over Y
-                    if (off.z != 0) roundPoint.z *= me; // me over Z
+                    if (off.x != 0) roundPoint.x *= dAxis;
+                    if (off.y != 0) roundPoint.y *= dAxis;
+                    if (off.z != 0) roundPoint.z *= dAxis;
                     
                 }
+
+                // AddDebugPoint(x, y, z, off, roundPoint);
             } else if (off.IsCorner) {
-                roundPoint = WriteInternalCorner(near, off);
-                float d1 = data.GetFloat(x, y, z);
+                roundPoint = point;//WriteInternalCorner(near, off);
                 float dAxis = data.GetFloat(x + off.x, y + off.y, z + off.z);
                 float dHor = data.GetFloat(x + off.HorAxis.x, y + off.HorAxis.y, z + off.HorAxis.z);
                 float dVer = data.GetFloat(x + off.VerAxis.x, y + off.VerAxis.y, z + off.VerAxis.z);
-                float deltaAx = 0;
                 
-                if (d1 >= 0.5 && dHor <= 0.5) {
-                    float deltaHor = Lerp(d1, dHor);
-                    if (dVer > 0.5) {
-                        deltaHor = (deltaHor + Lerp(dVer, dAxis)) / 2f;    
+                float deltaHor = Delta(d1, dHor);
+                float deltaVer = Delta(d1, dVer);
+                float valHor = deltaHor;
+                float valVer = deltaVer;
+
+                if (dAxis > 0.5) {
+                    valHor = (deltaHor + Delta(dVer, dAxis)) / 2f;
+                    valVer = (deltaVer + Delta(dHor, dAxis)) / 2f;
+                } else {
+                    if (dVer > 0.5 && dHor < 0.5) {
+                        valHor = Mathf.Lerp(valHor, Delta(dVer, dAxis), deltaVer);
                     }
-                
-                    if (off.HorAxis.x != 0) roundPoint.x *= deltaHor;
-                    if (off.HorAxis.y != 0) roundPoint.y *= deltaHor;
-                    if (off.HorAxis.z != 0) roundPoint.z *= deltaHor;
+                    if (dHor > 0.5 && dVer < 0.5) {
+                        valVer = Mathf.Lerp(valVer, Delta(dHor, dAxis), deltaHor);
+                    }
+
+                    if (dVer < 0.5 && dHor < 0.5)  {
+                        valHor = Mathf.Lerp(valHor, 0, (deltaVer - 0.5f) / 0.5f);
+                        valVer = Mathf.Lerp(valVer, 0, (deltaHor - 0.5f) / 0.5f);
+                    } else if (dHor > 0.5 && dVer > 0.5) {
+                        valHor = (valHor + Delta(dVer, dAxis)) / 2f;
+                        valVer = (valVer + Delta(dHor, dAxis)) / 2f;
+                    }
+                    
                 }
 
-                if (d1 >= 0.5 && dVer <= 0.5) {
-                    float deltaVer = Lerp(d1, dVer);
-                    if (dHor > 0.5) {
-                        deltaVer = (deltaVer + Lerp(dHor, dAxis)) / 2f;    
-                    }
-                
-                    if (off.VerAxis.x != 0) roundPoint.x *= deltaVer;
-                    if (off.VerAxis.y != 0) roundPoint.y *= deltaVer;
-                    if (off.VerAxis.z != 0) roundPoint.z *= deltaVer;
-                }
+
+                valHor = LerpDelta(valHor);
+                valVer = LerpDelta(valVer);
+                if (off.HorAxis.x != 0) roundPoint.x *= valHor;
+                if (off.HorAxis.y != 0) roundPoint.y *= valHor;
+                if (off.HorAxis.z != 0) roundPoint.z *= valHor;
+                if (off.VerAxis.x != 0) roundPoint.x *= valVer;
+                if (off.VerAxis.y != 0) roundPoint.y *= valVer;
+                if (off.VerAxis.z != 0) roundPoint.z *= valVer;
+
+                AddDebugPoint(x, y, z, off, roundPoint);
                 
             } else if (off.IsEdge) {
-                roundPoint = WriteInternalEdge(near, off);
-                float d1 = data.GetFloat(x, y, z);
-                float deltaAx = 0;
+                roundPoint = point;//WriteInternalEdge(near, off);
+                float dAxis = data.GetFloat(x + off.x, y + off.y, z + off.z);
+                float dX = data.GetFloat(x + off.CloserX.x, y, z);
+                float dY = data.GetFloat(x, y + off.CloserY.y, z);
+                float dZ = data.GetFloat(x, y, z + off.CloserZ.z);
+                float dXY = data.GetFloat(x + off.CloserXY.x, y + off.CloserXY.y, z);
+                float dYZ = data.GetFloat(x, y + off.CloserYZ.y, z + off.CloserYZ.z);
+                float dZX = data.GetFloat(x + off.CloserZX.x, y, z + off.CloserZX.z);
+                bool moveX = !getNear(x, y, z, off.CloserX) && !getNear(x, y, z, off.CloserXY) &&
+                             !getNear(x, y, z, off.CloserZX);
+                bool moveY = !getNear(x, y, z, off.CloserY) && !getNear(x, y, z, off.CloserYZ) &&
+                             !getNear(x, y, z, off.CloserXY);
+                bool moveZ = !getNear(x, y, z, off.CloserZ) && !getNear(x, y, z, off.CloserZX) &&
+                             !getNear(x, y, z, off.CloserYZ);
                 
-                float d2 = data.GetFloat(x + off.x, y + off.y, z + off.z);
-                if (d1 >= 0.5 && d2 <= 0.5) {
-                    float delta = Mathf.Abs(d2 - d1) < 0.0001f ? 0.5f : (0.5f - d1) / (d2 - d1);
-                    deltaAx = 1 + (delta - 0.5f) / 0.5f;
+                float deltaX = Delta(d1, dX);
+                float deltaY = Delta(d1, dY);
+                float deltaZ = Delta(d1, dZ);
+                float valX = deltaX;
+                float valY = deltaY;
+                float valZ = deltaZ;
+                
+                if (dY > 0.5 && dZ > 0.5) {
+                    float f1 = Mathf.Lerp(valX, Delta(dY, dXY), deltaY);
+                    float f2 = Mathf.Lerp(valX, Delta(dZ, dZX), deltaZ);
+                    valX = Mathf.Lerp(f1, f2, deltaZ / (deltaY + deltaZ));
+                } else if (dY > 0.5) {
+                    valX = Mathf.Lerp(valX, Delta(dY, dXY), deltaY);
+                } else if (dZ > 0.5) {
+                    valX = Mathf.Lerp(valX, Delta(dZ, dZX), deltaZ);
                 }
-
-                d2 = data.GetFloat(x + off.CloserX.x, y, z);
-                if (d1 >= 0.5 && d2 <= 0.5) {
-                    float delta = Mathf.Abs(d2 - d1) < 0.0001f ? 0.5f : (0.5f - d1) / (d2 - d1);
-                    float d = 1 + (delta - 0.5f) / 0.5f;
-
-                    roundPoint.x *= d;
+                
+                if (dZ > 0.5 && dX > 0.5) {
+                    float f1 = Mathf.Lerp(valY, Delta(dZ, dYZ), deltaZ);
+                    float f2 = Mathf.Lerp(valY, Delta(dX, dXY), deltaX);
+                    valY = Mathf.Lerp(f1, f2, deltaX / (deltaZ + deltaX));
+                } else if (dZ > 0.5) {
+                    valY = Mathf.Lerp(valY, Delta(dZ, dYZ), deltaZ);
+                } else if (dX > 0.5) {
+                    valY = Mathf.Lerp(valY, Delta(dX, dXY), deltaX);
                 }
-
-                d2 = data.GetFloat(x, y + off.CloserY.y, z);
-                if (d1 >= 0.5 && d2 <= 0.5) {
-                    float delta = Mathf.Abs(d2 - d1) < 0.0001f ? 0.5f : (0.5f - d1) / (d2 - d1);
-                    float d = 1 + (delta - 0.5f) / 0.5f;
-
-                    roundPoint.y *= d;
+                
+                if (dX > 0.5 && dY > 0.5) {
+                    float f1 = Mathf.Lerp(valZ, Delta(dX, dZX), deltaX);
+                    float f2 = Mathf.Lerp(valZ, Delta(dY, dYZ), deltaY);
+                    valZ = Mathf.Lerp(f1, f2, deltaY / (deltaX + deltaY));
+                } else if (dX > 0.5) {
+                    valZ = Mathf.Lerp(valZ, Delta(dX, dZX), deltaX);
+                } else if (dY > 0.5) {
+                    valZ = Mathf.Lerp(valZ, Delta(dY, dYZ), deltaY);
                 }
-
-                d2 = data.GetFloat(x, y, z + off.CloserZ.z);
-                if (d1 >= 0.5 && d2 <= 0.5) {
-                    float delta = Mathf.Abs(d2 - d1) < 0.0001f ? 0.5f : (0.5f - d1) / (d2 - d1);
-                    float d = 1 + (delta - 0.5f) / 0.5f;
-
-                    roundPoint.z *= d;
+                
+                if (dY < 0.5 && dZ < 0.5 && deltaY > 0.5 && deltaZ > 0.5) {
+                    float f1 = Mathf.Lerp(valX, 0, (deltaY - 0.5f) * 2);
+                    float f2 = Mathf.Lerp(valX, 0, (deltaZ - 0.5f) * 2);
+                    valX = Mathf.Lerp(f1, f2, deltaZ / (deltaY + deltaZ));
+                } else if (dY < 0.5 && deltaY > 0.5) {
+                    valX = Mathf.Lerp(valX, 0, (deltaY - 0.5f) * 2);
+                } else if (dZ < 0.5 && deltaZ > 0.5) {
+                    valX = Mathf.Lerp(valX, 0, (deltaZ - 0.5f) * 2);
                 }
+                
+                if (dZ < 0.5 && dX < 0.5 && deltaZ > 0.5 && deltaX > 0.5) {
+                    float f1 = Mathf.Lerp(valY, 0, (deltaZ - 0.5f) * 2);
+                    float f2 = Mathf.Lerp(valY, 0, (deltaX - 0.5f) * 2);
+                    valY = Mathf.Lerp(f1, f2, deltaX / (deltaZ + deltaX));
+                } else if (dZ < 0.5 && deltaZ > 0.5) {
+                    valY = Mathf.Lerp(valY, 0, (deltaZ - 0.5f) * 2);
+                } else if (dX < 0.5 && deltaX > 0.5) {
+                    valY = Mathf.Lerp(valY, 0, (deltaX - 0.5f) * 2);
+                }
+                
+                if (dX < 0.5 && dY < 0.5 && deltaX > 0.5 && deltaY > 0.5) {
+                    float f1 = Mathf.Lerp(valZ, 0, (deltaX - 0.5f) * 2);
+                    float f2 = Mathf.Lerp(valZ, 0, (deltaY - 0.5f) * 2);
+                    valZ = Mathf.Lerp(f1, f2, deltaY / (deltaX + deltaY));
+                } else if (dX < 0.5 && deltaX > 0.5) {
+                    valZ = Mathf.Lerp(valZ, 0, (deltaX - 0.5f) * 2);
+                } else if (dY < 0.5 && deltaY > 0.5) {
+                    valZ = Mathf.Lerp(valZ, 0, (deltaY - 0.5f) * 2);
+                }
+                
+                /*if (moveX)*/ roundPoint.x *= LerpDelta(valX);
+                /*if (moveY)*/ roundPoint.y *= LerpDelta(valY);
+                /*if (moveZ)*/ roundPoint.z *= LerpDelta(valZ);
+                //AddDebugPoint(x, y, z, off, roundPoint);
                 
             }
-
-
             SetTempVertex(x, y, z, off, roundPoint);
         }
     }
@@ -299,13 +409,10 @@ public class RoundingGenerator2 : MeshGenerator {
     }
 
     public void EmitVertex(int x, int y, int z) {
-        bool blocky = true;
         bool[] near = new bool[27];
         for (int i = 0; i < 27; i++) {
             near[i] = getNear(x, y, z, i);
-            if (near[i]) blocky = false;
         }
-        //if (blocky) return;
 
         for (int i = 0; i < 27; i++) {
             Off3D off = i;

@@ -51,7 +51,6 @@ public class RoundingGenerator : MeshGenerator {
         p1 = p1 * 0.5f + cp;
         p2 = p2 * 0.5f + cp;
         p3 = p3 * 0.5f + cp;
-        mesh.AddTriangle(p1, p2, p3);
         if (side.x == -1 || side.y == -1 || side.z == -1) {
             mesh.AddTriangle(p1, p2, p3);
         } else {
@@ -220,13 +219,10 @@ public class RoundingGenerator : MeshGenerator {
     }
 
     public void EmitVertex(int x, int y, int z) {
-        bool blocky = true;
         bool[] near = new bool[27];
         for (int i = 0; i < 27; i++) {
             near[i] = getNear(x, y, z, i);
-            if (near[i]) blocky = false;
         }
-        //if (blocky) return;
 
         for (int i = 0; i < 27; i++) {
             Off3D off = i;

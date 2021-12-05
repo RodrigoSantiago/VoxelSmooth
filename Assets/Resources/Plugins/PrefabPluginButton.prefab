@@ -394,8 +394,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 51e17c5fa77d4e2e8488457bd7505732, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  plugin: {fileID: 0}
   color0: {r: 1, g: 1, b: 1, a: 1}
-  color1: {r: 1, g: 0, b: 0, a: 1}
+  color1: {r: 1, g: 0.63564134, b: 0, a: 1}
+  color2: {r: 1, g: 0, b: 0, a: 1}
   mat01: {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
   mat02: {fileID: 2100000, guid: 9e60c85f32a32f445b54efd7ccbbc0d3, type: 2}

@@ -46,7 +46,7 @@ public class Chunk {
     }
     
     public bool GetSmooth(int x, int y, int z) {
-        return Get(x, y, z) > 500;
+        return Get(x, y, z) >= 500;
     }
     
     public void Set(int x, int y, int z, int block) {

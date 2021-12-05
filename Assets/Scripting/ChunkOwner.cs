@@ -26,8 +26,11 @@ public class ChunkOwner : MonoBehaviour {
                         float d = Mathf.Sqrt((x - width / 2f) * (x - width / 2f) +
                                              (y - height / 2f) * (y - height / 2f) +
                                              (z - length / 2f) * (z - length / 2f));
-                        d = 1 - Mathf.Clamp01(d - 3);
-                        chunk.Set(x, y, z, (int) (d * 1000));
+                        d = 1 - Mathf.Clamp01(d - (width * 0.4f));
+                        
+                        int v = (int) (d * 1000);
+                        v = Mathf.RoundToInt(v / 143f) * 143;
+                        chunk.Set(x, y, z, v);
                         //chunk.Set(x, y, z, Random.value < 0.25f ? 1000 : 0);
                     }
                 }

@@ -2,11 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MarchingGenerator : MeshGenerator {
+public class MarchingGenerator2 : MeshGenerator {
     
     private int width, height, length;
     
-    public MarchingGenerator(int width, int height, int length) {
+    public MarchingGenerator2(int width, int height, int length) {
         this.width = width;
         this.height = height;
         this.length = length;
@@ -14,7 +14,7 @@ public class MarchingGenerator : MeshGenerator {
     
     public override void Generate(Chunk chunk, MeshEmitter meshEmitter) {
 	    
-	    MarchingCubes mb = new MarchingCubes();
+	    var mb = new MarchingCubes2();
 	    float[] justTest = new float[chunk.Width * chunk.Height * chunk.Length];
 	    for (int i = 1; i < chunk.Width; i++) {
 		    for (int j = 1; j < chunk.Height; j++) {
@@ -28,100 +28,41 @@ public class MarchingGenerator : MeshGenerator {
 	    List<int> index = new List<int>();
 	    
 	    mb.Generate(justTest, width, height, length, vertex, index);
-	    //mb.Generate(justTest, vertex, index);
 	    
 	    meshEmitter.AddLists(vertex, index);
-	    
-		
-	    /*float[] densities = new float[8];
-	    float[] bigList = new float[chunk.Width * 2 * chunk.Height * 2 * chunk.Length * 2];
-	    for (int x = 0; x < width * 2; x++) {
-		    for (int y = 0; y < height * 2; y++) {
-			    for (int z = 0; z < length * 2; z++) {
-				    int ind = 0;
-				    for (int i = 0; i <= 1; i++) {
-					    for (int j = 0; j <= 1; j++) {
-						    for (int k = 0; k <= 1; k++) {
-							    if (x / 2 + i >= width) densities[i] = 0;
-							    else if (y / 2 + j >= height) densities[i] = 0;
-							    else if (z / 2 + k >= length) densities[i] = 0;
-							    else densities[ind++] = chunk.Get(x / 2 + i, y / 2 + j, z / 2 + k) / 1000f;
-						    }
-					    }
-				    }
-
-				    bigList[x + y * width * 2 + z * width * 2 * height * 2] =
-					    chunk.Get(x / 2, y / 2, z / 2) / 1000f;
-				    bigList[x + y * width * 2 + z * width * 2 * height * 2] = (float) trilinearInterpolate(
-					    densities[0], densities[1],
-					    densities[2], densities[3], 
-					    densities[4], densities[5], 
-					    densities[6], densities[7], 
-					    z / 2f - z / 2, x / 2f - x / 2, y / 2f - y / 2);
-			    }
-		    }
-	    }
-
-	    List<Vector3> vertex = new List<Vector3>();
-	    List<int> index = new List<int>();
-	    
-	    mb.Generate(bigList, width * 2, height * 2, length  * 2, vertex, index);
-
-	    for (int i = 0; i < vertex.Count; i++) {
-		    vertex[i] /= 2;
-	    }
-	    meshEmitter.AddLists(vertex, index);*/
     }
 
     public override Mesh Regenerate(Chunk chunk, Mesh mesh, int x, int y, int z, int width, int height, int length) {
         throw new System.NotImplementedException();
     }
-	public static double trilinearInterpolate(double _000, double _100,
-		double _010, double _110, double _001, double _101,
-		double _011, double _111, double t, double u, double v) {
-
-		return interpolate(
-			bilinearInterpolate(_000, _001, _010, _011, u, v),
-			bilinearInterpolate(_100, _101, _110, _111, u, v), t);
-
-	}
-	public static double interpolate(double a, double b, double t) {
-		return a + t * (b - a);
-	}
-        
-	public static double bilinearInterpolate(double _00, double _10,
-		double _01, double _11, double t, double u) {
-
-		return interpolate(interpolate(_00, _10, t),
-			interpolate(_01, _11, t), u);
-
-	}
 
 }
 
-public interface IMarching {
-
-	float Surface { get; set; }
-
-	void Generate(IList<float> voxels, int width, int height, int depth, IList<Vector3> verts, IList<int> indices);
-
-}
-
-public abstract class Marching : IMarching {
-
+public class MarchingCubes2 {
 	public float Surface { get; set; }
 
 	private float[] Cube { get; set; }
 
-	/// <summary>
-	/// Winding order of triangles use 2,1,0 or 0,1,2
-	/// </summary>
 	protected int[] WindingOrder { get; private set; }
 
-	public Marching(float surface = 0.5f) {
+	protected static readonly int[,] VertexOffset = new int[,] {
+		{0, 0, 0},
+		{1, 0, 0},
+		{1, 1, 0},
+		{0, 1, 0},
+		{0, 0, 1}, 
+		{1, 0, 1}, 
+		{1, 1, 1}, 
+		{0, 1, 1}
+	};
+	
+	private Vector3[] EdgeVertex { get; set; }
+	
+	public MarchingCubes2(float surface = 0.5f) {
 		Surface = surface;
 		Cube = new float[8];
 		WindingOrder = new int[] {0, 1, 2};
+		EdgeVertex = new Vector3[12];
 	}
 
 	public virtual void Generate(IList<float> voxels, int width, int height, int depth, IList<Vector3> verts, IList<int> indices) {
@@ -150,123 +91,163 @@ public abstract class Marching : IMarching {
 						Cube[i] = voxels[ix + iy * width + iz * width * height];
 					}
 
-					//Perform algorithm
-					March(x, y, z, Cube, verts, indices);
+					March(x, y, z, Cube, verts, indices, 0, 2, 3, 7);
+					March(x, y, z, Cube, verts, indices, 0, 2, 6, 7);
+					March(x, y, z, Cube, verts, indices, 0, 4, 6, 7);
+					March(x, y, z, Cube, verts, indices, 0, 6, 1, 2);
+					March(x, y, z, Cube, verts, indices, 0, 6, 1, 4);
+					March(x, y, z, Cube, verts, indices, 5, 6, 1, 4);
 				}
 			}
 		}
 	}
 
-	/// <summary>
-	/// MarchCube performs the Marching algorithm on a single cube
-	/// </summary>
-	protected abstract void March(float x, float y, float z, float[] cube, IList<Vector3> vertList,
-		IList<int> indexList);
+	protected void March(float x, float y, float z, float[] cube, IList<Vector3> vertList, IList<int> indexList,
+		int v0, int v1, int v2, int v3) {
+		int ntri = 0;
+		int triindex;
 
-	/// <summary>
-	/// GetOffset finds the approximate point of intersection of the surface
-	/// between two points with the values v1 and v2
-	/// </summary>
-	protected virtual float GetOffset(float v1, float v2) {
+		/*
+		   Determine which of the 16 cases we have given which vertices
+		   are above or below the isosurface
+		*/
+		triindex = 0;
+		if (cube[v0] > Surface) triindex |= 1;
+		if (cube[v1] > Surface) triindex |= 2;
+		if (cube[v2] > Surface) triindex |= 4;
+		if (cube[v3] > Surface) triindex |= 8;
+		
+		Vector3 p = new Vector3(x, y, z);
+		Vector3 p0 = p + new Vector3(VertexOffset[v0, 0], VertexOffset[v0, 1], VertexOffset[v0, 2]);
+		Vector3 p1 = p + new Vector3(VertexOffset[v1, 0], VertexOffset[v1, 1], VertexOffset[v1, 2]);
+		Vector3 p2 = p + new Vector3(VertexOffset[v2, 0], VertexOffset[v2, 1], VertexOffset[v2, 2]);
+		Vector3 p3 = p + new Vector3(VertexOffset[v3, 0], VertexOffset[v3, 1], VertexOffset[v3, 2]);
+		
+		Vector3[] triangle1 = new Vector3[3];
+		Vector3[] triangle2 = new Vector3[3];
+		/* Form the vertices of the triangles for each case */
+		switch (triindex) {
+			case 0x00:
+			case 0x0F:
+				break;
+			case 0x0E:
+			case 0x01:
+				triangle1[0] = VertexInterp(p0, p1, cube[v0], cube[v1]);
+				triangle1[1] = VertexInterp(p0, p2, cube[v0], cube[v2]);
+				triangle1[2] = VertexInterp(p0, p3, cube[v0], cube[v3]);
+				ntri++;
+				break;
+			case 0x0D:
+			case 0x02:
+				triangle1[0] = VertexInterp(p1, p0, cube[v1], cube[v0]);
+				triangle1[1] = VertexInterp(p1, p3, cube[v1], cube[v3]);
+				triangle1[2] = VertexInterp(p1, p2, cube[v1], cube[v2]);
+				ntri++;
+				break;
+			case 0x0C:
+			case 0x03:
+				triangle1[0] = VertexInterp(p0, p3, cube[v0], cube[v3]);
+				triangle1[1] = VertexInterp(p0, p2, cube[v0], cube[v2]);
+				triangle1[2] = VertexInterp(p1, p3, cube[v1], cube[v3]);
+				ntri++;
+				triangle2[0] = triangle1[2];
+				triangle2[1] = VertexInterp(p1, p2, cube[v1], cube[v2]);
+				triangle2[2] = triangle1[1];
+				ntri++;
+				break;
+			case 0x0B:
+			case 0x04:
+				triangle1[0] = VertexInterp(p2, p0, cube[v2], cube[v0]);
+				triangle1[1] = VertexInterp(p2, p1, cube[v2], cube[v1]);
+				triangle1[2] = VertexInterp(p2, p3, cube[v2], cube[v3]);
+				ntri++;
+				break;
+			case 0x0A:
+			case 0x05:
+				triangle1[0] = VertexInterp(p0, p1, cube[v0], cube[v1]);
+				triangle1[1] = VertexInterp(p2, p3, cube[v2], cube[v3]);
+				triangle1[2] = VertexInterp(p0, p3, cube[v0], cube[v3]);
+				ntri++;
+				triangle2[0] = triangle1[0];
+				triangle2[1] = VertexInterp(p1, p2, cube[v1], cube[v2]);
+				triangle2[2] = triangle1[1];
+				ntri++;
+				break;
+			case 0x09:
+			case 0x06:
+				triangle1[0] = VertexInterp(p0, p1, cube[v0], cube[v1]);
+				triangle1[1] = VertexInterp(p1, p3, cube[v1], cube[v3]);
+				triangle1[2] = VertexInterp(p2, p3, cube[v2], cube[v3]);
+				ntri++;
+				triangle2[0] = triangle1[0];
+				triangle2[1] = VertexInterp(p0, p2, cube[v0], cube[v2]);
+				triangle2[2] = triangle1[2];
+				ntri++;
+				break;
+			case 0x07:
+			case 0x08:
+				triangle1[0] = VertexInterp(p3, p0, cube[v3], cube[v0]);
+				triangle1[1] = VertexInterp(p3, p2, cube[v3], cube[v2]);
+				triangle1[2] = VertexInterp(p3, p1, cube[v3], cube[v1]);
+				ntri++;
+				break;
+		}
+
+		if (ntri >= 1) {
+			int n = vertList.Count;
+			vertList.Add(triangle1[0]);
+			vertList.Add(triangle1[1]);
+			vertList.Add(triangle1[2]);
+			vertList.Add(triangle1[2]);
+			vertList.Add(triangle1[1]);
+			vertList.Add(triangle1[0]);
+			indexList.Add(n);
+			indexList.Add(n + 1);
+			indexList.Add(n + 2);
+			indexList.Add(n + 3);
+			indexList.Add(n + 4);
+			indexList.Add(n + 5);
+		}
+
+
+		if (ntri >= 2) {
+			int n = vertList.Count;
+			vertList.Add(triangle2[0]);
+			vertList.Add(triangle2[1]);
+			vertList.Add(triangle2[2]);
+			vertList.Add(triangle2[2]);
+			vertList.Add(triangle2[1]);
+			vertList.Add(triangle2[0]);
+			indexList.Add(n);
+			indexList.Add(n + 1);
+			indexList.Add(n + 2);
+			indexList.Add(n + 3);
+			indexList.Add(n + 4);
+			indexList.Add(n + 5);
+		}
+	}
+
+	protected Vector3 VertexInterp(Vector3 p1, Vector3 p2, float d1, float d2) {
+		return Vector3.Lerp(p1, p2, GetOffset(d1, d2));
+	}
+	
+	protected float GetOffset(float v1, float v2) {
 		float delta = v2 - v1;
 		return (delta == 0.0f) ? Surface : (Surface - v1) / delta;
 	}
 
-	/// <summary>
-	/// VertexOffset lists the positions, relative to vertex0, 
-	/// of each of the 8 vertices of a cube.
-	/// vertexOffset[8][3]
-	/// </summary>
-	protected static readonly int[,] VertexOffset = new int[,] {
-		{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0},
-		{0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1}
-	};
-
-}
-
-public class MarchingCubes : Marching {
-
-	private Vector3[] EdgeVertex { get; set; }
-
-	public MarchingCubes(float surface = 0.5f) : base(surface) {
-		EdgeVertex = new Vector3[12];
-	}
-
-	protected override void March(float x, float y, float z, float[] cube, IList<Vector3> vertList, IList<int> indexList) {
-		int i, j, vert, idx;
-		int flagIndex = 0;
-		float offset = 0.0f;
-
-		//Find which vertices are inside of the surface and which are outside
-		for (i = 0; i < 8; i++)
-			if (cube[i] <= Surface)
-				flagIndex |= 1 << i;
-
-		//Find which edges are intersected by the surface
-		int edgeFlags = CubeEdgeFlags[flagIndex];
-
-		//If the cube is entirely inside or outside of the surface, then there will be no intersections
-		if (edgeFlags == 0) return;
-
-		//Find the point of intersection of the surface with each edge
-		for (i = 0; i < 12; i++) {
-			//if there is an intersection on this edge
-			if ((edgeFlags & (1 << i)) != 0) {
-				offset = GetOffset(cube[EdgeConnection[i, 0]], cube[EdgeConnection[i, 1]]);
-
-				EdgeVertex[i].x = x + (VertexOffset[EdgeConnection[i, 0], 0] + offset * EdgeDirection[i, 0]);
-				EdgeVertex[i].y = y + (VertexOffset[EdgeConnection[i, 0], 1] + offset * EdgeDirection[i, 1]);
-				EdgeVertex[i].z = z + (VertexOffset[EdgeConnection[i, 0], 2] + offset * EdgeDirection[i, 2]);
-			}
-		}
-
-		//Save the triangles that were found. There can be up to five per cube
-		for (i = 0; i < 5; i++) {
-			if (TriangleConnectionTable[flagIndex, 3 * i] < 0) break;
-
-			idx = vertList.Count;
-
-			for (j = 0; j < 3; j++) {
-				vert = TriangleConnectionTable[flagIndex, 3 * i + j];
-				indexList.Add(idx + WindingOrder[j]);
-				vertList.Add(EdgeVertex[vert]);
-			}
-		}
-	}
-
-	/// <summary>
-	/// EdgeConnection lists the index of the endpoint vertices for each 
-	/// of the 12 edges of the cube.
-	/// edgeConnection[12][2]
-	/// </summary>
 	private static readonly int[,] EdgeConnection = new int[,] {
 		{0, 1}, {1, 2}, {2, 3}, {3, 0},
 		{4, 5}, {5, 6}, {6, 7}, {7, 4},
 		{0, 4}, {1, 5}, {2, 6}, {3, 7}
 	};
 
-	/// <summary>
-	/// edgeDirection lists the direction vector (vertex1-vertex0) for each edge in the cube.
-	/// edgeDirection[12][3]
-	/// </summary>
 	private static readonly float[,] EdgeDirection = new float[,] {
 		{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f},
 		{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f},
 		{0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}
 	};
 
-
-	/// <summary>
-	/// For any edge, if one vertex is inside of the surface and the other 
-	/// is outside of the surface then the edge intersects the surface.
-	/// For each of the 8 vertices of the cube can be two possible states,
-	/// either inside or outside of the surface.
-	/// For any cube the are 2^8=256 possible sets of vertex states.
-	/// This table lists the edges intersected by the surface for all 256 
-	/// possible vertex states. There are 12 edges.  
-	/// For each entry in the table, if edge #n is intersected, then bit #n is set to 1.
-	/// cubeEdgeFlags[256]
-	/// </summary>
 	private static readonly int[] CubeEdgeFlags = new int[] {
 		0x000, 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c, 0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
 		0x190, 0x099, 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c, 0x99c, 0x895, 0xb9f, 0xa96, 0xd9a, 0xc93, 0xf99, 0xe90,
@@ -286,15 +267,6 @@ public class MarchingCubes : Marching {
 		0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c, 0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x000
 	};
 
-
-	/// <summary>
-	/// For each of the possible vertex states listed in cubeEdgeFlags there is a specific triangulation
-	/// of the edge intersection points.  triangleConnectionTable lists all of them in the form of
-	/// 0-5 edge triples with the list terminated by the invalid value -1.
-	/// For example: triangleConnectionTable[3] list the 2 triangles formed when corner[0] 
-	/// and corner[1] are inside of the surface, but the rest of the cube is not.
-	/// triangleConnectionTable[256][16]
-	/// </summary>
 	private static readonly int[,] TriangleConnectionTable = new int[,] {
 		{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 		{0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
