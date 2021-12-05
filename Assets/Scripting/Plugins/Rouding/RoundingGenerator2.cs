@@ -38,7 +38,7 @@ public class RoundingGenerator2 : MeshGenerator {
                 for (int z = 0; z < length; z++) {
                     if (!get(x, y, z)) continue;
                     
-                    //EmitVertex(x, y, z);
+                    EmitVertex(x, y, z);
                 }
             }
         }
@@ -127,9 +127,23 @@ public class RoundingGenerator2 : MeshGenerator {
         return 1 + (Delta(d1, d2) - 0.5f) / 0.5f;
     } 
     
-    public float LerpDelta(float delta) {
-        return 1 + (delta - 0.5f) / 0.5f;
-    } 
+    public float GetForce(float delta) {
+        return delta < 0.5 ? delta * 2 : 1;
+    }
+
+    public Vector3 GetEffectPoint(Vector3 point, Vector3 center, float delta) {
+        return Vector3.Lerp(point, center, Mathf.Clamp01((delta - 0.5f) * 2f));
+    }
+
+    public Vector3 GetLerpPoint(Vector3 point, Vector3 pt, Vector3 rp) {
+        float abx = Mathf.Abs(point.x);
+        float aby = Mathf.Abs(point.y);
+        float abz = Mathf.Abs(point.z);
+        float rx = abx < 0.0001f ? 0 : Mathf.Clamp01(Mathf.Abs(pt.x) - abx) / abx;
+        float ry = aby < 0.0001f ? 0 : Mathf.Clamp01(Mathf.Abs(pt.y) - aby) / aby;
+        float rz = abz < 0.0001f ? 0 : Mathf.Clamp01(Mathf.Abs(pt.z) - abz) / abz;
+        return Vector3.Lerp(rp, pt, Mathf.Max(rx, ry, rz));
+    }
     
     public void WriteInternalMesh(int x, int y, int z) {
         bool[] near = new bool[27];
@@ -147,64 +161,62 @@ public class RoundingGenerator2 : MeshGenerator {
                 // NEVER ROUND
                 
             } else */if (off.IsSide) {
-                roundPoint = point;//WriteInternalSide(near, off);
-                float d2 = data.GetFloat(x + off.x, y + off.y, z + off.z);
-                if (d1 >= 0.5) {
-                    float dAxis = LerpDelta(d1, d2);
+                roundPoint = WriteInternalSide(near, off);
+                float dAxis = data.GetFloat(x + off.x, y + off.y, z + off.z);
+                
+                Vector3 center = off.vec3;
+                Vector3 me = Vector3.zero;
+                Vector3 axis = off.vec3 * 2;
+                float effMe = GetForce(d1);
+                float effAxis = GetForce(dAxis);
+                float total = effMe + effAxis;
+                
+                me = GetEffectPoint(me, center, d1);
+                axis = GetEffectPoint(axis, center, dAxis);
+                
+                var pt = (me * effMe + axis * effAxis) / total;
+                var rp = new Vector3(
+                    point.x == 0 ? 0 : roundPoint.x * pt.x / point.x,
+                    point.y == 0 ? 0 : roundPoint.y * pt.y / point.y, 
+                    point.z == 0 ? 0 : roundPoint.z * pt.z / point.z);
 
-                    if (off.x != 0) roundPoint.x *= dAxis;
-                    if (off.y != 0) roundPoint.y *= dAxis;
-                    if (off.z != 0) roundPoint.z *= dAxis;
-                    
-                }
-
-                // AddDebugPoint(x, y, z, off, roundPoint);
+                roundPoint = GetLerpPoint(point, pt, rp);
+                
+                // AddDebugPoint(x, y, z, off, pt);
             } else if (off.IsCorner) {
-                roundPoint = point;//WriteInternalCorner(near, off);
+                roundPoint = WriteInternalCorner(near, off);
                 float dAxis = data.GetFloat(x + off.x, y + off.y, z + off.z);
                 float dHor = data.GetFloat(x + off.HorAxis.x, y + off.HorAxis.y, z + off.HorAxis.z);
                 float dVer = data.GetFloat(x + off.VerAxis.x, y + off.VerAxis.y, z + off.VerAxis.z);
+
+                Vector3 center = off.vec3;
+                Vector3 me = Vector3.zero;
+                Vector3 hor = off.HorAxis.vec3 * 2;
+                Vector3 ver = off.VerAxis.vec3 * 2;
+                Vector3 axis = off.vec3 * 2;
+
+                float effMe = GetForce(d1);
+                float effHor = GetForce(dHor);
+                float effVer = GetForce(dVer);
+                float effAxis = GetForce(dAxis);
+                float total = effMe + effHor + effVer + effAxis;
+
+                me = GetEffectPoint(me, center, d1);
+                hor = GetEffectPoint(hor, center, dHor);
+                ver = GetEffectPoint(ver, center, dVer);
+                axis = GetEffectPoint(axis, center, dAxis);
+
+                var pt = (me * effMe + hor * effHor + ver * effVer + axis * effAxis) / total;
+                var rp = new Vector3(
+                    point.x == 0 ? 0 : roundPoint.x * pt.x / point.x,
+                    point.y == 0 ? 0 : roundPoint.y * pt.y / point.y, 
+                    point.z == 0 ? 0 : roundPoint.z * pt.z / point.z);
                 
-                float deltaHor = Delta(d1, dHor);
-                float deltaVer = Delta(d1, dVer);
-                float valHor = deltaHor;
-                float valVer = deltaVer;
+                roundPoint = GetLerpPoint(point, pt, rp);
 
-                if (dAxis > 0.5) {
-                    valHor = (deltaHor + Delta(dVer, dAxis)) / 2f;
-                    valVer = (deltaVer + Delta(dHor, dAxis)) / 2f;
-                } else {
-                    if (dVer > 0.5 && dHor < 0.5) {
-                        valHor = Mathf.Lerp(valHor, Delta(dVer, dAxis), deltaVer);
-                    }
-                    if (dHor > 0.5 && dVer < 0.5) {
-                        valVer = Mathf.Lerp(valVer, Delta(dHor, dAxis), deltaHor);
-                    }
-
-                    if (dVer < 0.5 && dHor < 0.5)  {
-                        valHor = Mathf.Lerp(valHor, 0, (deltaVer - 0.5f) / 0.5f);
-                        valVer = Mathf.Lerp(valVer, 0, (deltaHor - 0.5f) / 0.5f);
-                    } else if (dHor > 0.5 && dVer > 0.5) {
-                        valHor = (valHor + Delta(dVer, dAxis)) / 2f;
-                        valVer = (valVer + Delta(dHor, dAxis)) / 2f;
-                    }
-                    
-                }
-
-
-                valHor = LerpDelta(valHor);
-                valVer = LerpDelta(valVer);
-                if (off.HorAxis.x != 0) roundPoint.x *= valHor;
-                if (off.HorAxis.y != 0) roundPoint.y *= valHor;
-                if (off.HorAxis.z != 0) roundPoint.z *= valHor;
-                if (off.VerAxis.x != 0) roundPoint.x *= valVer;
-                if (off.VerAxis.y != 0) roundPoint.y *= valVer;
-                if (off.VerAxis.z != 0) roundPoint.z *= valVer;
-
-                AddDebugPoint(x, y, z, off, roundPoint);
-                
+                // AddDebugPoint(x, y, z, off, pt);
             } else if (off.IsEdge) {
-                roundPoint = point;//WriteInternalEdge(near, off);
+                roundPoint = WriteInternalEdge(near, off);
                 float dAxis = data.GetFloat(x + off.x, y + off.y, z + off.z);
                 float dX = data.GetFloat(x + off.CloserX.x, y, z);
                 float dY = data.GetFloat(x, y + off.CloserY.y, z);
@@ -212,85 +224,49 @@ public class RoundingGenerator2 : MeshGenerator {
                 float dXY = data.GetFloat(x + off.CloserXY.x, y + off.CloserXY.y, z);
                 float dYZ = data.GetFloat(x, y + off.CloserYZ.y, z + off.CloserYZ.z);
                 float dZX = data.GetFloat(x + off.CloserZX.x, y, z + off.CloserZX.z);
-                bool moveX = !getNear(x, y, z, off.CloserX) && !getNear(x, y, z, off.CloserXY) &&
-                             !getNear(x, y, z, off.CloserZX);
-                bool moveY = !getNear(x, y, z, off.CloserY) && !getNear(x, y, z, off.CloserYZ) &&
-                             !getNear(x, y, z, off.CloserXY);
-                bool moveZ = !getNear(x, y, z, off.CloserZ) && !getNear(x, y, z, off.CloserZX) &&
-                             !getNear(x, y, z, off.CloserYZ);
                 
-                float deltaX = Delta(d1, dX);
-                float deltaY = Delta(d1, dY);
-                float deltaZ = Delta(d1, dZ);
-                float valX = deltaX;
-                float valY = deltaY;
-                float valZ = deltaZ;
+                Vector3 center = off.vec3;
+                Vector3 me = Vector3.zero;
+                Vector3 pX = off.CloserX.vec3 * 2;
+                Vector3 pY = off.CloserY.vec3 * 2;
+                Vector3 pZ = off.CloserZ.vec3 * 2;
+                Vector3 pXY = off.CloserXY.vec3 * 2;
+                Vector3 pYZ = off.CloserYZ.vec3 * 2;
+                Vector3 pZX = off.CloserZX.vec3 * 2;
+                Vector3 axis = off.vec3 * 2;
+
+                float effMe = GetForce(d1);
+                float effX = GetForce(dX);
+                float effY = GetForce(dY);
+                float effZ = GetForce(dZ);
+                float effXY = GetForce(dXY);
+                float effYZ = GetForce(dYZ);
+                float effZX = GetForce(dZX);
+                float effAxis = GetForce(dAxis);
                 
-                if (dY > 0.5 && dZ > 0.5) {
-                    float f1 = Mathf.Lerp(valX, Delta(dY, dXY), deltaY);
-                    float f2 = Mathf.Lerp(valX, Delta(dZ, dZX), deltaZ);
-                    valX = Mathf.Lerp(f1, f2, deltaZ / (deltaY + deltaZ));
-                } else if (dY > 0.5) {
-                    valX = Mathf.Lerp(valX, Delta(dY, dXY), deltaY);
-                } else if (dZ > 0.5) {
-                    valX = Mathf.Lerp(valX, Delta(dZ, dZX), deltaZ);
-                }
+                float total = effMe + effX + effY + effZ + effXY + effYZ + effZX + effAxis;
+
+                me = GetEffectPoint(me, center, d1);
+                pX = GetEffectPoint(pX, center, dX);
+                pY = GetEffectPoint(pY, center, dY);
+                pZ = GetEffectPoint(pZ, center, dZ);
+                pXY = GetEffectPoint(pXY, center, dXY);
+                pYZ = GetEffectPoint(pYZ, center, dYZ);
+                pZX = GetEffectPoint(pZX, center, dZX);
+                axis = GetEffectPoint(axis, center, dAxis);
                 
-                if (dZ > 0.5 && dX > 0.5) {
-                    float f1 = Mathf.Lerp(valY, Delta(dZ, dYZ), deltaZ);
-                    float f2 = Mathf.Lerp(valY, Delta(dX, dXY), deltaX);
-                    valY = Mathf.Lerp(f1, f2, deltaX / (deltaZ + deltaX));
-                } else if (dZ > 0.5) {
-                    valY = Mathf.Lerp(valY, Delta(dZ, dYZ), deltaZ);
-                } else if (dX > 0.5) {
-                    valY = Mathf.Lerp(valY, Delta(dX, dXY), deltaX);
-                }
+                var pt = (me * effMe +
+                          pX * effX + pY * effY + pZ * effZ + 
+                          pXY * effXY + pYZ * effYZ + pZX * effZX + 
+                          axis * effAxis) / total;
+                var rp = new Vector3(
+                    point.x == 0 ? 0 : roundPoint.x * pt.x / point.x,
+                    point.y == 0 ? 0 : roundPoint.y * pt.y / point.y, 
+                    point.z == 0 ? 0 : roundPoint.z * pt.z / point.z);
                 
-                if (dX > 0.5 && dY > 0.5) {
-                    float f1 = Mathf.Lerp(valZ, Delta(dX, dZX), deltaX);
-                    float f2 = Mathf.Lerp(valZ, Delta(dY, dYZ), deltaY);
-                    valZ = Mathf.Lerp(f1, f2, deltaY / (deltaX + deltaY));
-                } else if (dX > 0.5) {
-                    valZ = Mathf.Lerp(valZ, Delta(dX, dZX), deltaX);
-                } else if (dY > 0.5) {
-                    valZ = Mathf.Lerp(valZ, Delta(dY, dYZ), deltaY);
-                }
+                roundPoint = GetLerpPoint(point, pt, rp);
                 
-                if (dY < 0.5 && dZ < 0.5 && deltaY > 0.5 && deltaZ > 0.5) {
-                    float f1 = Mathf.Lerp(valX, 0, (deltaY - 0.5f) * 2);
-                    float f2 = Mathf.Lerp(valX, 0, (deltaZ - 0.5f) * 2);
-                    valX = Mathf.Lerp(f1, f2, deltaZ / (deltaY + deltaZ));
-                } else if (dY < 0.5 && deltaY > 0.5) {
-                    valX = Mathf.Lerp(valX, 0, (deltaY - 0.5f) * 2);
-                } else if (dZ < 0.5 && deltaZ > 0.5) {
-                    valX = Mathf.Lerp(valX, 0, (deltaZ - 0.5f) * 2);
-                }
-                
-                if (dZ < 0.5 && dX < 0.5 && deltaZ > 0.5 && deltaX > 0.5) {
-                    float f1 = Mathf.Lerp(valY, 0, (deltaZ - 0.5f) * 2);
-                    float f2 = Mathf.Lerp(valY, 0, (deltaX - 0.5f) * 2);
-                    valY = Mathf.Lerp(f1, f2, deltaX / (deltaZ + deltaX));
-                } else if (dZ < 0.5 && deltaZ > 0.5) {
-                    valY = Mathf.Lerp(valY, 0, (deltaZ - 0.5f) * 2);
-                } else if (dX < 0.5 && deltaX > 0.5) {
-                    valY = Mathf.Lerp(valY, 0, (deltaX - 0.5f) * 2);
-                }
-                
-                if (dX < 0.5 && dY < 0.5 && deltaX > 0.5 && deltaY > 0.5) {
-                    float f1 = Mathf.Lerp(valZ, 0, (deltaX - 0.5f) * 2);
-                    float f2 = Mathf.Lerp(valZ, 0, (deltaY - 0.5f) * 2);
-                    valZ = Mathf.Lerp(f1, f2, deltaY / (deltaX + deltaY));
-                } else if (dX < 0.5 && deltaX > 0.5) {
-                    valZ = Mathf.Lerp(valZ, 0, (deltaX - 0.5f) * 2);
-                } else if (dY < 0.5 && deltaY > 0.5) {
-                    valZ = Mathf.Lerp(valZ, 0, (deltaY - 0.5f) * 2);
-                }
-                
-                /*if (moveX)*/ roundPoint.x *= LerpDelta(valX);
-                /*if (moveY)*/ roundPoint.y *= LerpDelta(valY);
-                /*if (moveZ)*/ roundPoint.z *= LerpDelta(valZ);
-                //AddDebugPoint(x, y, z, off, roundPoint);
-                
+                // AddDebugPoint(x, y, z, off, pt);
             }
             SetTempVertex(x, y, z, off, roundPoint);
         }
