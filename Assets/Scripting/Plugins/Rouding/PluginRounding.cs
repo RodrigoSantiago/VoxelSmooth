@@ -48,7 +48,7 @@ public class PluginRounding : MonoBehaviour, PluginGenerator {
 
     public void Recalculate() {
         var generator = new RoundingGenerator2(chunk.Width, chunk.Height, chunk.Length, false, false);
-        var emitter = new MeshEmitter();
+        var emitter = new MeshEmitter(true);
         generator.Generate(chunk, emitter);
         
         var mesh = emitter.Build();

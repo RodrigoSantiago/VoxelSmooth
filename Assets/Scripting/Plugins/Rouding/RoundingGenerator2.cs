@@ -424,7 +424,7 @@ public class RoundingGenerator2 : MeshGenerator {
     }
 
     private bool IsSideRound(Vector3Int pos, Off3D off) {
-        return false && IsSideRound(pos.x, pos.y, pos.z, off);
+        return IsSideRound(pos.x, pos.y, pos.z, off);
     }
 
     private bool IsSideRound(int x, int y, int z, Off3D off) {

@@ -459,10 +459,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a314b23e2174a64cb2d3aea7b3aedb7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useStatic: 1
-  width: 8
-  height: 8
-  length: 8
+  useStatic: 0
+  width: 32
+  height: 32
+  length: 32
 --- !u!1 &1299338212
 GameObject:
   m_ObjectHideFlags: 0
@@ -727,12 +727,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4804364502107699208, guid: f83d21b5f64b1aa4f89b3cac5186004d, type: 3}
+      propertyPath: showCubes
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4804364502107699208, guid: f83d21b5f64b1aa4f89b3cac5186004d, type: 3}
       propertyPath: chunkOwner
       value: 
       objectReference: {fileID: 963194232}
     - target: {fileID: 4804364502107699209, guid: f83d21b5f64b1aa4f89b3cac5186004d, type: 3}
       propertyPath: m_Materials.Array.size
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4804364502107699209, guid: f83d21b5f64b1aa4f89b3cac5186004d, type: 3}
       propertyPath: m_Materials.Array.data[0]

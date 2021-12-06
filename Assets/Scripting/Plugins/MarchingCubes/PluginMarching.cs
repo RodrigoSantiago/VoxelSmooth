@@ -47,8 +47,8 @@
      }
 
      public void Recalculate() {
-         var generator = new MarchingGenerator2(chunk.Width, chunk.Height, chunk.Length);
-         var emitter = new MeshEmitter();
+         var generator = new MarchingGenerator(chunk.Width, chunk.Height, chunk.Length);
+         var emitter = new MeshEmitter(true);
          generator.Generate(chunk, emitter);
 
          var mesh = emitter.Build();
