@@ -10,13 +10,17 @@ public class RoundingGenerator2 : MeshGenerator {
     private int width, height, length;
     private Vector3[] tempVectors;
     private bool[] subBlock;
+    private bool rouding;
+    private bool effector;
     
-    public RoundingGenerator2(int width, int height, int length, bool padding, bool ignorePositive) {
+    public RoundingGenerator2(int width, int height, int length, bool rouding, bool effector) {
         tempVectors = new Vector3[(width * 2 + 1) * (height * 2 + 1) * (length * 2 + 1)];
         subBlock = new bool[(width + 2) * 2 * (height + 2) * 2 * (length + 2) * 2];
         this.width = width;
         this.height = height;
         this.length = length;
+        this.rouding = rouding;
+        this.effector = effector;
     }
 
     public override void Generate(Chunk chunk, MeshEmitter meshEmitter) {
@@ -128,21 +132,26 @@ public class RoundingGenerator2 : MeshGenerator {
     } 
     
     public float GetForce(float delta) {
-        return delta < 0.5 ? delta * 2 : 1;
+        return delta < 0.5 ? delta * 4 : 1;
     }
 
     public Vector3 GetEffectPoint(Vector3 point, Vector3 center, float delta) {
         return Vector3.Lerp(point, center, Mathf.Clamp01((delta - 0.5f) * 2f));
     }
 
-    public Vector3 GetLerpPoint(Vector3 point, Vector3 pt, Vector3 rp) {
+    public Vector3 GetLerpPoint(Vector3 point, Vector3 pt, Vector3 roundPoint) {
+        var rp = new Vector3(
+            point.x == 0 ? 0 : roundPoint.x * pt.x / point.x,
+            point.y == 0 ? 0 : roundPoint.y * pt.y / point.y, 
+            point.z == 0 ? 0 : roundPoint.z * pt.z / point.z);
+        
         float abx = Mathf.Abs(point.x);
         float aby = Mathf.Abs(point.y);
         float abz = Mathf.Abs(point.z);
         float rx = abx < 0.0001f ? 0 : Mathf.Clamp01(Mathf.Abs(pt.x) - abx) / abx;
         float ry = aby < 0.0001f ? 0 : Mathf.Clamp01(Mathf.Abs(pt.y) - aby) / aby;
         float rz = abz < 0.0001f ? 0 : Mathf.Clamp01(Mathf.Abs(pt.z) - abz) / abz;
-        return Vector3.Lerp(rp, pt, Mathf.Max(rx, ry, rz));
+        return rouding ? Vector3.Lerp(rp, pt, Mathf.Max(rx, ry, rz)) : pt;
     }
     
     public void WriteInternalMesh(int x, int y, int z) {
@@ -175,12 +184,9 @@ public class RoundingGenerator2 : MeshGenerator {
                 axis = GetEffectPoint(axis, center, dAxis);
                 
                 var pt = (me * effMe + axis * effAxis) / total;
-                var rp = new Vector3(
-                    point.x == 0 ? 0 : roundPoint.x * pt.x / point.x,
-                    point.y == 0 ? 0 : roundPoint.y * pt.y / point.y, 
-                    point.z == 0 ? 0 : roundPoint.z * pt.z / point.z);
 
-                roundPoint = GetLerpPoint(point, pt, rp);
+                if (!effector) roundPoint = GetLerpPoint(point, pt, roundPoint);
+                else roundPoint = rouding ? roundPoint : point;
                 
                 // AddDebugPoint(x, y, z, off, pt);
             } else if (off.IsCorner) {
@@ -207,12 +213,9 @@ public class RoundingGenerator2 : MeshGenerator {
                 axis = GetEffectPoint(axis, center, dAxis);
 
                 var pt = (me * effMe + hor * effHor + ver * effVer + axis * effAxis) / total;
-                var rp = new Vector3(
-                    point.x == 0 ? 0 : roundPoint.x * pt.x / point.x,
-                    point.y == 0 ? 0 : roundPoint.y * pt.y / point.y, 
-                    point.z == 0 ? 0 : roundPoint.z * pt.z / point.z);
                 
-                roundPoint = GetLerpPoint(point, pt, rp);
+                if (!effector) roundPoint = GetLerpPoint(point, pt, roundPoint);
+                else roundPoint = rouding ? roundPoint : point;
 
                 // AddDebugPoint(x, y, z, off, pt);
             } else if (off.IsEdge) {
@@ -259,13 +262,9 @@ public class RoundingGenerator2 : MeshGenerator {
                           pX * effX + pY * effY + pZ * effZ + 
                           pXY * effXY + pYZ * effYZ + pZX * effZX + 
                           axis * effAxis) / total;
-                var rp = new Vector3(
-                    point.x == 0 ? 0 : roundPoint.x * pt.x / point.x,
-                    point.y == 0 ? 0 : roundPoint.y * pt.y / point.y, 
-                    point.z == 0 ? 0 : roundPoint.z * pt.z / point.z);
-                
-                roundPoint = GetLerpPoint(point, pt, rp);
-                
+
+                if (!effector) roundPoint = GetLerpPoint(point, pt, roundPoint);
+                else roundPoint = rouding ? roundPoint : point;
                 // AddDebugPoint(x, y, z, off, pt);
             }
             SetTempVertex(x, y, z, off, roundPoint);
@@ -308,7 +307,7 @@ public class RoundingGenerator2 : MeshGenerator {
                 roundPoint = point * 0.5f;
 
                 // Ramp Exception
-                if (near[off.Tangent + off.VerAxis] || near[off.ITangent + off.VerAxis]) {
+                /*if (near[off.Tangent + off.VerAxis] || near[off.ITangent + off.VerAxis]) {
                     if (off.VerAxis.x != 0) roundPoint.x = point.x;
                     else if (off.VerAxis.y != 0) roundPoint.y = point.y;
                     else if (off.VerAxis.z != 0) roundPoint.z = point.z;
@@ -318,7 +317,7 @@ public class RoundingGenerator2 : MeshGenerator {
                     if (off.HorAxis.x != 0) roundPoint.x = point.x;
                     else if (off.HorAxis.y != 0) roundPoint.y = point.y;
                     else if (off.HorAxis.z != 0) roundPoint.z = point.z;
-                }
+                }*/
 
                 return roundPoint;
             }
@@ -530,7 +529,7 @@ public class RoundingGenerator2 : MeshGenerator {
             if (getNear(x, y, z, ax + nax)) {
                 if (!IsSubBlockMarked(x + off.x + nax.x, y + off.y + nax.y, z + off.z + nax.z, ax + rNax - off)) {
                     Vector3 p7 = GetTempVertexOffset(pos, (ax + nax).vec, off + rAx);
-                    Vector3 p8 = (pp4 + p7) / 2; // ?que ? nao seria p4
+                    Vector3 p8 = (pp4 + p7) / 2;
                     Vector3 p9 = (pp2 + p7) / 2;
                     Vector3 p0 = (pp2 + p4 + p7) / 3;
                     AddTriangle(x, y, z, pp2, p0, p6, offG);

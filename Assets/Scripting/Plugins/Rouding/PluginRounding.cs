@@ -4,8 +4,18 @@ using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class PluginRounding : MonoBehaviour, PluginGenerator {
+    public enum Algor {
+        ROUDING, MARCHING
+    }
 
+    public Algor algorithm = Algor.ROUDING;
+    private Algor prevAlgorithm = Algor.ROUDING;
+    public bool showLines;
     public bool showCubes;
+    public bool rouding;
+    public bool effector;
+    private bool prevRouding;
+    private bool prevEffector;
     private bool pshowCubes;
     public ChunkOwner chunkOwner;
     public GameObject prefabPluginBtn;
@@ -15,13 +25,15 @@ public class PluginRounding : MonoBehaviour, PluginGenerator {
     
     void Start() {
         chunk = chunkOwner.chunk;//new Chunk(width, height, length);
-        
-        for (int x = 0; x < chunk.Width; x++) {
-            for (int y = 0; y < chunk.Height; y++) {
-                for (int z = 0; z < chunk.Length; z++) {
-                    var obj = Instantiate(prefabPluginBtn, new Vector3(x, y, z), Quaternion.identity);
-                    obj.GetComponent<PluginButton>().plugin = this;
-                    obj.transform.SetParent(transform, false);
+
+        if (showLines) {
+            for (int x = 0; x < chunk.Width; x++) {
+                for (int y = 0; y < chunk.Height; y++) {
+                    for (int z = 0; z < chunk.Length; z++) {
+                        var obj = Instantiate(prefabPluginBtn, new Vector3(x, y, z), Quaternion.identity);
+                        obj.GetComponent<PluginButton>().plugin = this;
+                        obj.transform.SetParent(transform, false);
+                    }
                 }
             }
         }
@@ -30,8 +42,11 @@ public class PluginRounding : MonoBehaviour, PluginGenerator {
     }
     
     void Update() {
-        if (pshowCubes != showCubes) {
+        if (pshowCubes != showCubes || prevAlgorithm != algorithm || prevRouding != rouding || effector != prevEffector) {
             pshowCubes = showCubes;
+            prevAlgorithm = algorithm;
+            prevRouding = rouding;
+            prevEffector = effector;
             Recalculate();
         }
     }
@@ -47,11 +62,18 @@ public class PluginRounding : MonoBehaviour, PluginGenerator {
     }
 
     public void Recalculate() {
-        var generator = new RoundingGenerator2(chunk.Width, chunk.Height, chunk.Length, false, false);
         var emitter = new MeshEmitter(true);
-        generator.Generate(chunk, emitter);
-        
-        var mesh = emitter.Build();
+        Mesh mesh = null; 
+        if (algorithm == Algor.ROUDING) {
+            var generator = new RoundingGenerator2(chunk.Width, chunk.Height, chunk.Length, rouding, effector);
+            generator.Generate(chunk, emitter);
+            
+        } else if (algorithm == Algor.MARCHING) {
+            var generator = new MarchingGenerator(chunk.Width, chunk.Height, chunk.Length);
+            generator.Generate(chunk, emitter);
+        }
+
+        mesh = emitter.Build();
         GetComponent<MeshFilter>().mesh = mesh;
         Debug.Log("Rounding : " + mesh.GetIndexCount(0) / 3);
 
