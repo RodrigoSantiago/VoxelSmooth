@@ -14,7 +14,7 @@ public class MarchingGenerator : MeshGenerator {
     
     public override void Generate(Chunk chunk, MeshEmitter meshEmitter) {
 	    
-	    MarchingCubes mb = new MarchingCubes();
+	    /*MarchingCubes mb = new MarchingCubes();
 	    float[] justTest = new float[chunk.Width * chunk.Height * chunk.Length];
 	    for (int i = 1; i < chunk.Width; i++) {
 		    for (int j = 1; j < chunk.Height; j++) {
@@ -30,34 +30,35 @@ public class MarchingGenerator : MeshGenerator {
 	    mb.Generate(justTest, width, height, length, vertex, index);
 	    //mb.Generate(justTest, vertex, index);
 	    
-	    meshEmitter.AddLists(vertex, index);
-	    
-		
-	    /*float[] densities = new float[8];
-	    float[] bigList = new float[chunk.Width * 2 * chunk.Height * 2 * chunk.Length * 2];
-	    for (int x = 0; x < width * 2; x++) {
-		    for (int y = 0; y < height * 2; y++) {
-			    for (int z = 0; z < length * 2; z++) {
+	    meshEmitter.AddLists(vertex, index);*/
+	    int m = 3;
+	    int size = chunk.Width * m;
+	    MarchingCubes mb = new MarchingCubes();
+	    float[] densities = new float[8];
+	    float[] bigList = new float[size * size * size];
+	    for (int x = 0; x < size; x++) {
+		    for (int y = 0; y <size; y++) {
+			    for (int z = 0; z < size; z++) {
 				    int ind = 0;
 				    for (int i = 0; i <= 1; i++) {
 					    for (int j = 0; j <= 1; j++) {
 						    for (int k = 0; k <= 1; k++) {
-							    if (x / 2 + i >= width) densities[i] = 0;
-							    else if (y / 2 + j >= height) densities[i] = 0;
-							    else if (z / 2 + k >= length) densities[i] = 0;
-							    else densities[ind++] = chunk.Get(x / 2 + i, y / 2 + j, z / 2 + k) / 1000f;
+							    if (x / m + i >= width) densities[i] = 0;
+							    else if (y / m + j >= height) densities[i] = 0;
+							    else if (z / m + k >= length) densities[i] = 0;
+							    else densities[ind++] = chunk.Get(x / m + i, y / m + j, z / m + k) / 1000f;
 						    }
 					    }
 				    }
 
-				    bigList[x + y * width * 2 + z * width * 2 * height * 2] =
-					    chunk.Get(x / 2, y / 2, z / 2) / 1000f;
-				    bigList[x + y * width * 2 + z * width * 2 * height * 2] = (float) trilinearInterpolate(
+				    /*bigList[x + y * width * 2 + z * width * 2 * height * 2] =
+					    chunk.Get(x / 2, y / 2, z / 2) / 1000f;*/
+				    bigList[x + y * size + z * size * size] = (float) trilinearInterpolate(
 					    densities[0], densities[1],
 					    densities[2], densities[3], 
 					    densities[4], densities[5], 
 					    densities[6], densities[7], 
-					    z / 2f - z / 2, x / 2f - x / 2, y / 2f - y / 2);
+					    z / (float)m - z / m, x / (float)m - x / m, y / (float)m - y / m);
 			    }
 		    }
 	    }
@@ -65,12 +66,12 @@ public class MarchingGenerator : MeshGenerator {
 	    List<Vector3> vertex = new List<Vector3>();
 	    List<int> index = new List<int>();
 	    
-	    mb.Generate(bigList, width * 2, height * 2, length  * 2, vertex, index);
+	    mb.Generate(bigList, size,size, size, vertex, index);
 
 	    for (int i = 0; i < vertex.Count; i++) {
-		    vertex[i] /= 2;
+		    vertex[i] /= m;
 	    }
-	    meshEmitter.AddLists(vertex, index);*/
+	    meshEmitter.AddLists(vertex, index);
     }
 
     public override Mesh Regenerate(Chunk chunk, Mesh mesh, int x, int y, int z, int width, int height, int length) {

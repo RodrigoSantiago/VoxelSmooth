@@ -5,6 +5,11 @@ using UnityEngine;
 
 public class RoundingGenerator2 : MeshGenerator {
     
+    private static float value01 = 0.7f;
+    private static float value02 = 0.5f;
+    private static float value03 = 0.4f;
+    private static float value04 = 0.3f;
+    
     private Chunk data;
     private MeshEmitter mesh;
     private int width, height, length;
@@ -132,10 +137,11 @@ public class RoundingGenerator2 : MeshGenerator {
     } 
     
     public float GetForce(float delta) {
-        return delta < 0.5 ? delta * 4 : 1;
+        return delta < 0.3 ?  delta * 2 : delta < 0.5 ? delta * 8 : 1;
     }
 
     public Vector3 GetEffectPoint(Vector3 point, Vector3 center, float delta) {
+        return Vector3.Lerp(point, center, 1 + ((0.5f - delta) / (-delta) - 0.5f) / 0.5f);
         return Vector3.Lerp(point, center, Mathf.Clamp01((delta - 0.5f) * 2f));
     }
 
@@ -173,16 +179,14 @@ public class RoundingGenerator2 : MeshGenerator {
                 roundPoint = WriteInternalSide(near, off);
                 float dAxis = data.GetFloat(x + off.x, y + off.y, z + off.z);
                 
-                Vector3 center = off.vec3;
-                Vector3 me = Vector3.zero;
-                Vector3 axis = off.vec3 * 2;
                 float effMe = GetForce(d1);
                 float effAxis = GetForce(dAxis);
                 float total = effMe + effAxis;
                 
-                me = GetEffectPoint(me, center, d1);
-                axis = GetEffectPoint(axis, center, dAxis);
-                
+                Vector3 center = off.vec3;
+                Vector3 me = GetEffectPoint(Vector3.zero, center, d1);
+                Vector3 axis = GetEffectPoint(off.vec3 * 2, center, dAxis);
+
                 var pt = (me * effMe + axis * effAxis) / total;
 
                 if (!effector) roundPoint = GetLerpPoint(point, pt, roundPoint);
@@ -194,23 +198,18 @@ public class RoundingGenerator2 : MeshGenerator {
                 float dAxis = data.GetFloat(x + off.x, y + off.y, z + off.z);
                 float dHor = data.GetFloat(x + off.HorAxis.x, y + off.HorAxis.y, z + off.HorAxis.z);
                 float dVer = data.GetFloat(x + off.VerAxis.x, y + off.VerAxis.y, z + off.VerAxis.z);
-
-                Vector3 center = off.vec3;
-                Vector3 me = Vector3.zero;
-                Vector3 hor = off.HorAxis.vec3 * 2;
-                Vector3 ver = off.VerAxis.vec3 * 2;
-                Vector3 axis = off.vec3 * 2;
-
+                
                 float effMe = GetForce(d1);
                 float effHor = GetForce(dHor);
                 float effVer = GetForce(dVer);
                 float effAxis = GetForce(dAxis);
                 float total = effMe + effHor + effVer + effAxis;
 
-                me = GetEffectPoint(me, center, d1);
-                hor = GetEffectPoint(hor, center, dHor);
-                ver = GetEffectPoint(ver, center, dVer);
-                axis = GetEffectPoint(axis, center, dAxis);
+                Vector3 center = off.vec3;
+                Vector3 me = GetEffectPoint(Vector3.zero, center, d1);
+                Vector3 hor = GetEffectPoint(off.HorAxis.vec3 * 2, center, dHor);
+                Vector3 ver = GetEffectPoint(off.VerAxis.vec3 * 2, center, dVer);
+                Vector3 axis = GetEffectPoint(off.vec3 * 2, center, dAxis);
 
                 var pt = (me * effMe + hor * effHor + ver * effVer + axis * effAxis) / total;
                 
@@ -227,16 +226,6 @@ public class RoundingGenerator2 : MeshGenerator {
                 float dXY = data.GetFloat(x + off.CloserXY.x, y + off.CloserXY.y, z);
                 float dYZ = data.GetFloat(x, y + off.CloserYZ.y, z + off.CloserYZ.z);
                 float dZX = data.GetFloat(x + off.CloserZX.x, y, z + off.CloserZX.z);
-                
-                Vector3 center = off.vec3;
-                Vector3 me = Vector3.zero;
-                Vector3 pX = off.CloserX.vec3 * 2;
-                Vector3 pY = off.CloserY.vec3 * 2;
-                Vector3 pZ = off.CloserZ.vec3 * 2;
-                Vector3 pXY = off.CloserXY.vec3 * 2;
-                Vector3 pYZ = off.CloserYZ.vec3 * 2;
-                Vector3 pZX = off.CloserZX.vec3 * 2;
-                Vector3 axis = off.vec3 * 2;
 
                 float effMe = GetForce(d1);
                 float effX = GetForce(dX);
@@ -249,14 +238,15 @@ public class RoundingGenerator2 : MeshGenerator {
                 
                 float total = effMe + effX + effY + effZ + effXY + effYZ + effZX + effAxis;
 
-                me = GetEffectPoint(me, center, d1);
-                pX = GetEffectPoint(pX, center, dX);
-                pY = GetEffectPoint(pY, center, dY);
-                pZ = GetEffectPoint(pZ, center, dZ);
-                pXY = GetEffectPoint(pXY, center, dXY);
-                pYZ = GetEffectPoint(pYZ, center, dYZ);
-                pZX = GetEffectPoint(pZX, center, dZX);
-                axis = GetEffectPoint(axis, center, dAxis);
+                Vector3 center = off.vec3;
+                Vector3 me = GetEffectPoint(Vector3.zero, center, d1);
+                Vector3 pX = GetEffectPoint(off.CloserX.vec3 * 2, center, dX);
+                Vector3 pY = GetEffectPoint(off.CloserY.vec3 * 2, center, dY);
+                Vector3 pZ = GetEffectPoint(off.CloserZ.vec3 * 2, center, dZ);
+                Vector3 pXY = GetEffectPoint(off.CloserXY.vec3 * 2, center, dXY);
+                Vector3 pYZ = GetEffectPoint(off.CloserYZ.vec3 * 2, center, dYZ);
+                Vector3 pZX = GetEffectPoint(off.CloserZX.vec3 * 2, center, dZX);
+                Vector3 axis = GetEffectPoint(off.vec3 * 2, center, dAxis);
                 
                 var pt = (me * effMe +
                           pX * effX + pY * effY + pZ * effZ + 
@@ -286,7 +276,7 @@ public class RoundingGenerator2 : MeshGenerator {
                 !near[ax + nax] && !near[ax + rnax] &&
                 !near[rax + nax] && !near[rax + rnax]) {
                 
-                return point * 0.7f;
+                return point * value01;
             }
         }
         
@@ -304,7 +294,7 @@ public class RoundingGenerator2 : MeshGenerator {
             if (!near[off.Tangent + off] && !near[off.ITangent + off]) {
 
                 // Round
-                roundPoint = point * 0.5f;
+                roundPoint = point * value02;
 
                 // Ramp Exception
                 /*if (near[off.Tangent + off.VerAxis] || near[off.ITangent + off.VerAxis]) {
@@ -334,9 +324,9 @@ public class RoundingGenerator2 : MeshGenerator {
                     !near[off.Tangent + lineAx + lineNax] && !near[off.ITangent + lineAx + lineNax] &&
                     (!near[off.Tangent + lineNax] || !near[off.ITangent + lineNax])) {
 
-                    if (lineAx.x != 0) roundPoint.x *= 0.7f;
-                    else if (lineAx.y != 0) roundPoint.y *= 0.7f;
-                    else if (lineAx.z != 0) roundPoint.z *= 0.7f;
+                    if (lineAx.x != 0) roundPoint.x *= value01;
+                    else if (lineAx.y != 0) roundPoint.y *= value01;
+                    else if (lineAx.z != 0) roundPoint.z *= value01;
                     
                     return roundPoint;
                 }
@@ -358,7 +348,7 @@ public class RoundingGenerator2 : MeshGenerator {
         bool pzx = near[off.CloserZX];
         int n = (px ? 1 : 0) + (py ? 1 : 0) + (pz ? 1 : 0) + (pxy ? 1 : 0) + (pyz ? 1 : 0) + (pzx ? 1 : 0);
         if (n == 1) {
-            roundPoint = point * ((px || py || pz) ? 0.5f : 0.7f);
+            roundPoint = point * ((px || py || pz) ? value02 : value01);
             if (px || pxy || pzx) roundPoint.x = point.x;
             if (py || pxy || pyz) roundPoint.y = point.y;
             if (pz || pyz || pzx) roundPoint.z = point.z;
@@ -366,17 +356,17 @@ public class RoundingGenerator2 : MeshGenerator {
             if (near[off.CloserXY - off.CloserZ] ||
                 near[off.CloserYZ - off.CloserX] ||
                 near[off.CloserZX - off.CloserY]) {
-                roundPoint = point * 0.5f;
+                roundPoint = point * value02;
             } else {
-                roundPoint = point * 0.4f;
+                roundPoint = point * value03;
                         
                 // Diagonal Ramp Exception
                 bool dXY = near[off.CloserY - off.CloserX] && near[off.CloserX - off.CloserY];
                 bool dYZ = near[off.CloserZ - off.CloserY] && near[off.CloserY - off.CloserZ];
                 bool dZX = near[off.CloserX - off.CloserZ] && near[off.CloserZ - off.CloserX];
-                if (dXY || dZX) roundPoint.x = point.x * 0.5f;
-                if (dXY || dYZ) roundPoint.y = point.y * 0.5f;
-                if (dYZ || dZX) roundPoint.z = point.z * 0.5f;
+                if (dXY || dZX) roundPoint.x = point.x * value02;
+                if (dXY || dYZ) roundPoint.y = point.y * value02;
+                if (dYZ || dZX) roundPoint.z = point.z * value02;
             }
         }
 
@@ -427,7 +417,7 @@ public class RoundingGenerator2 : MeshGenerator {
     }
 
     private bool IsSideRound(int x, int y, int z, Off3D off) {
-        if (!get(x, y, z) || getNear(x, y, z, off)) return false;
+        if (true || !get(x, y, z) || getNear(x, y, z, off)) return false;
 
         var point = off.vec3;
 
@@ -488,13 +478,13 @@ public class RoundingGenerator2 : MeshGenerator {
         Vector3 p4 = GetTempVertex(pos, off + ax + nax);
 
         if (IsSideRound(pos, off)) {
-            p1 += off.vec3 * 0.3f;
+            p1 += off.vec3 * value04;
         }
         if (IsCornerRound(pos, 0, off, ax)) {
-            p2 += off.vec3 * 0.3f;
+            p2 += off.vec3 * value04;
         }
         if (IsCornerRound(pos, 0, off, nax)) {
-            p3 += off.vec3 * 0.3f;
+            p3 += off.vec3 * value04;
         }
         AddTriangle(x, y, z, p1, p4, p2, off);
         AddTriangle(x, y, z, p1, p3, p4, off);
@@ -513,10 +503,10 @@ public class RoundingGenerator2 : MeshGenerator {
 
         bool roundP2 = IsCornerRound(pos, 0, off, nax);
         bool roundP4 = IsCornerRound(pos + ax.vec + off.vec, 0, rAx, nax);
-        Vector3 pp1 = IsSideRound(pos, off) ? p1 + off.vec3 * 0.3f : p1;
-        Vector3 pp2 = roundP2 ? p2 + off.vec3 * 0.3f : p2;
-        Vector3 pp3 = IsSideRound(pos + ax.vec + off.vec, rAx) ? p3 + rAx.vec3 * 0.3f : p3;
-        Vector3 pp4 = roundP4 ? p4 + rAx.vec3 * 0.3f : p4;
+        Vector3 pp1 = IsSideRound(pos, off) ? p1 + off.vec3 * value04 : p1;
+        Vector3 pp2 = roundP2 ? p2 + off.vec3 * value04 : p2;
+        Vector3 pp3 = IsSideRound(pos + ax.vec + off.vec, rAx) ? p3 + rAx.vec3 * value04 : p3;
+        Vector3 pp4 = roundP4 ? p4 + rAx.vec3 * value04 : p4;
 
         var offG = inverse ? off.Opposite : off;
         AddTriangle(x, y, z, pp1, pp2, p6, offG);
@@ -567,13 +557,13 @@ public class RoundingGenerator2 : MeshGenerator {
         Vector3 p0 = (p1 + p2 + p3) / 3;
 
         if (IsSideRound(pos, off)) {
-            p1 += off.vec3 * 0.3f;
+            p1 += off.vec3 * value04;
         }
         if (IsSideRound(pos + ax.vec + off.vec, rAx)) {
-            p2 += rAx.vec3 * 0.3f;
+            p2 += rAx.vec3 * value04;
         }
         if (IsSideRound(pos + nax.vec + off.vec, rNax)) {
-            p3 += rNax.vec3 * 0.3f;
+            p3 += rNax.vec3 * value04;
         }
         
         AddTriangle(x, y, z, p1, p0, p12, off);
@@ -597,13 +587,13 @@ public class RoundingGenerator2 : MeshGenerator {
         Vector3 p7 = (p3 + p4) / 2;
         
         if (IsSideRound(pos, off)) {
-            p1 += off.vec3 * 0.3f;
+            p1 += off.vec3 * value04;
         }
         if (IsCornerRound(pos, 0, off, ax)) {
-            p2 += off.vec3 * 0.3f;
+            p2 += off.vec3 * value04;
         }
         if (IsCornerRound(pos, 0, off, nax)) {
-            p3 += off.vec3 * 0.3f;
+            p3 += off.vec3 * value04;
         }
         
         AddTriangle(x, y, z, p5, p6, p1, off);
