@@ -31,7 +31,7 @@ public class MarchingGenerator : MeshGenerator {
 	    //mb.Generate(justTest, vertex, index);
 	    
 	    meshEmitter.AddLists(vertex, index);*/
-	    int m = 3;
+	    int m = 1;
 	    int size = chunk.Width * m;
 	    MarchingCubes mb = new MarchingCubes();
 	    float[] densities = new float[8];

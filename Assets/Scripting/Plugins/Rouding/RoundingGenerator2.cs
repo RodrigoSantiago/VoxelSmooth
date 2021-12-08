@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using UnityEngine;
 
 public class RoundingGenerator2 : MeshGenerator {
@@ -132,6 +133,9 @@ public class RoundingGenerator2 : MeshGenerator {
         return delta;
     } 
     
+    public float LerpDelta(float d1) {
+        return 1 + (d1 - 0.5f) / 0.5f;
+    } 
     public float LerpDelta(float d1, float d2) {
         return 1 + (Delta(d1, d2) - 0.5f) / 0.5f;
     } 
@@ -159,7 +163,42 @@ public class RoundingGenerator2 : MeshGenerator {
         float rz = abz < 0.0001f ? 0 : Mathf.Clamp01(Mathf.Abs(pt.z) - abz) / abz;
         return rouding ? Vector3.Lerp(rp, pt, Mathf.Max(rx, ry, rz)) : pt;
     }
-    
+
+    private Vector3 GetPoint(Vector3 horAxis, Vector3 verAxis, float d1, float dHor, float dVer, float dAxis) {
+        float deltaHor = Delta(d1, dHor);
+        float deltaVer = Delta(d1, dVer);
+        Vector3 a = horAxis * LerpDelta(d1, dHor) + 
+                    verAxis * LerpDelta(Mathf.Lerp(Delta(d1, dVer), Delta(dHor, dAxis), dHor < 0.5 ? (deltaHor - 0.5f) * 2 : deltaHor));
+        Vector3 b = verAxis * LerpDelta(d1, dVer) + 
+                    horAxis * LerpDelta(Mathf.Lerp(Delta(d1, dHor), Delta(dVer, dAxis), dVer < 0.5 ? (deltaVer - 0.5f) * 2 : deltaVer));
+        return (a + b) / 2;
+    }
+
+    private Vector3 GetPoint(float xAxis, float yAxis, float zAxis,
+        float d1, float dX, float dY, float dZ, float dXY, float dYZ, float dZX) {
+        
+        float deltaX = Delta(d1, dX);
+        float deltaY = Delta(d1, dY);
+        float deltaZ = Delta(d1, dZ);
+        
+        Vector3 x = new Vector3(
+            xAxis * LerpDelta(d1, dX),
+            yAxis * LerpDelta(Mathf.Lerp(Delta(d1, dY), Delta(dX, dXY), dX < 0.5 ? (deltaX - 0.5f) * 2 : deltaX)),
+            zAxis * LerpDelta(Mathf.Lerp(Delta(d1, dZ), Delta(dX, dZX), dX < 0.5 ? (deltaX - 0.5f) * 2 : deltaX)));
+        
+        Vector3 y = new Vector3(
+            xAxis * LerpDelta(Mathf.Lerp(Delta(d1, dX), Delta(dY, dXY), dY < 0.5 ? (deltaY - 0.5f) * 2 : deltaY)),
+            yAxis * LerpDelta(d1, dY),
+            zAxis * LerpDelta(Mathf.Lerp(Delta(d1, dZ), Delta(dY, dYZ), dY < 0.5 ? (deltaY - 0.5f) * 2 : deltaY)));
+        
+        Vector3 z = new Vector3(
+            xAxis * LerpDelta(Mathf.Lerp(Delta(d1, dX), Delta(dZ, dZX), dZ < 0.5 ? (deltaZ - 0.5f) * 2 : deltaZ)),
+            yAxis * LerpDelta(Mathf.Lerp(Delta(d1, dY), Delta(dZ, dYZ), dZ < 0.5 ? (deltaZ - 0.5f) * 2 : deltaZ)),
+            zAxis * LerpDelta(d1, dZ));
+
+        return (x + y + z) / 3;
+    }
+
     public void WriteInternalMesh(int x, int y, int z) {
         bool[] near = new bool[27];
         for (int i = 0; i < 27; i++) {
@@ -187,7 +226,12 @@ public class RoundingGenerator2 : MeshGenerator {
                 Vector3 me = GetEffectPoint(Vector3.zero, center, d1);
                 Vector3 axis = GetEffectPoint(off.vec3 * 2, center, dAxis);
 
-                var pt = (me * effMe + axis * effAxis) / total;
+                var altered = off.vec3 * LerpDelta(d1, dAxis);// (me * effMe + axis * effAxis) / total;
+                var pt = new Vector3(
+                    (point.x == 0 ? 1 : altered.x / point.x) * roundPoint.x, 
+                    (point.y == 0 ? 1 : altered.y / point.y) * roundPoint.y, 
+                    (point.z == 0 ? 1 : altered.z / point.z) * roundPoint.z);
+                roundPoint = effector ? (rouding ? pt : altered) : (rouding ? roundPoint : point);
 
                 if (!effector) roundPoint = GetLerpPoint(point, pt, roundPoint);
                 else roundPoint = rouding ? roundPoint : point;
@@ -199,24 +243,38 @@ public class RoundingGenerator2 : MeshGenerator {
                 float dHor = data.GetFloat(x + off.HorAxis.x, y + off.HorAxis.y, z + off.HorAxis.z);
                 float dVer = data.GetFloat(x + off.VerAxis.x, y + off.VerAxis.y, z + off.VerAxis.z);
                 
-                float effMe = GetForce(d1);
-                float effHor = GetForce(dHor);
-                float effVer = GetForce(dVer);
-                float effAxis = GetForce(dAxis);
-                float total = effMe + effHor + effVer + effAxis;
+                Vector3 axis = off.vec3;
+                Vector3 horAxis = off.HorAxis.vec3;
+                Vector3 verAxis = off.VerAxis.vec3;
 
-                Vector3 center = off.vec3;
-                Vector3 me = GetEffectPoint(Vector3.zero, center, d1);
-                Vector3 hor = GetEffectPoint(off.HorAxis.vec3 * 2, center, dHor);
-                Vector3 ver = GetEffectPoint(off.VerAxis.vec3 * 2, center, dVer);
-                Vector3 axis = GetEffectPoint(off.vec3 * 2, center, dAxis);
+                Vector3 altered = GetPoint(horAxis, verAxis, d1, dHor, dVer, dAxis);
+                int total = 1;
+                if (dHor > 0.5) {
+                    altered += horAxis * 2 + GetPoint(verAxis, -horAxis, dHor, dAxis, d1, dVer);
+                    total++;
+                }
 
-                var pt = (me * effMe + hor * effHor + ver * effVer + axis * effAxis) / total;
+                if (dVer > 0.5) {
+                    altered += verAxis * 2 + GetPoint(-verAxis, horAxis, dVer, d1, dAxis, dHor);
+                    total++;
+                }
                 
+                if (dAxis > 0.5) {
+                    altered += axis * 2 + GetPoint(-horAxis, -verAxis, dAxis, dVer, dHor, d1);
+                    total++;
+                }
+
+                altered /= total;
+                var pt = new Vector3(
+                    (point.x == 0 ? 1 : altered.x / point.x) * roundPoint.x, 
+                    (point.y == 0 ? 1 : altered.y / point.y) * roundPoint.y, 
+                    (point.z == 0 ? 1 : altered.z / point.z) * roundPoint.z);// new Vector3(xMul * point.x, yMul * point.y, zMul * point.z);
+                roundPoint = effector ? (rouding ? pt : altered) : (rouding ? roundPoint : point);
+
                 if (!effector) roundPoint = GetLerpPoint(point, pt, roundPoint);
                 else roundPoint = rouding ? roundPoint : point;
 
-                // AddDebugPoint(x, y, z, off, pt);
+                // AddDebugPoint(x, y, z, off, altered);
             } else if (off.IsEdge) {
                 roundPoint = WriteInternalEdge(near, off);
                 float dAxis = data.GetFloat(x + off.x, y + off.y, z + off.z);
@@ -227,35 +285,53 @@ public class RoundingGenerator2 : MeshGenerator {
                 float dYZ = data.GetFloat(x, y + off.CloserYZ.y, z + off.CloserYZ.z);
                 float dZX = data.GetFloat(x + off.CloserZX.x, y, z + off.CloserZX.z);
 
-                float effMe = GetForce(d1);
-                float effX = GetForce(dX);
-                float effY = GetForce(dY);
-                float effZ = GetForce(dZ);
-                float effXY = GetForce(dXY);
-                float effYZ = GetForce(dYZ);
-                float effZX = GetForce(dZX);
-                float effAxis = GetForce(dAxis);
+                Vector3 axis = off.vec3;
+                Vector3 xAxis = off.CloserX.vec3;
+                Vector3 yAxis = off.CloserY.vec3;
+                Vector3 zAxis = off.CloserZ.vec3;
                 
-                float total = effMe + effX + effY + effZ + effXY + effYZ + effZX + effAxis;
-
-                Vector3 center = off.vec3;
-                Vector3 me = GetEffectPoint(Vector3.zero, center, d1);
-                Vector3 pX = GetEffectPoint(off.CloserX.vec3 * 2, center, dX);
-                Vector3 pY = GetEffectPoint(off.CloserY.vec3 * 2, center, dY);
-                Vector3 pZ = GetEffectPoint(off.CloserZ.vec3 * 2, center, dZ);
-                Vector3 pXY = GetEffectPoint(off.CloserXY.vec3 * 2, center, dXY);
-                Vector3 pYZ = GetEffectPoint(off.CloserYZ.vec3 * 2, center, dYZ);
-                Vector3 pZX = GetEffectPoint(off.CloserZX.vec3 * 2, center, dZX);
-                Vector3 axis = GetEffectPoint(off.vec3 * 2, center, dAxis);
+                Vector3 altered = GetPoint(xAxis.x, yAxis.y, zAxis.z, d1, dX, dY, dZ, dXY, dYZ, dZX);
+                int total = 1;
+                if (dX > 0.5) {
+                    altered += xAxis * 2 + GetPoint(-xAxis.x, yAxis.y, zAxis.z, dX, d1, dXY, dZX, dY, dAxis, dZ);
+                    total++;
+                }
+                if (dY > 0.5) {
+                    altered += yAxis * 2 + GetPoint(xAxis.x, -yAxis.y, zAxis.z, dY, dXY, d1, dYZ, dX, dZ, dAxis);
+                    total++;
+                }
+                if (dZ > 0.5) {
+                    altered += zAxis * 2 + GetPoint(xAxis.x, yAxis.y, -zAxis.z, dZ, dZX, dYZ, d1, dAxis, dY, dX); // AQUI
+                    //altered += zAxis * 2 + GetPoint(yAxis.y, xAxis.x, -zAxis.z, dZ, dYZ, dZX, d1, dAxis, dX, dY);
+                    total++;
+                }
+                if (dXY > 0.5) {
+                    altered += (xAxis + yAxis) * 2 + GetPoint(-xAxis.x, -yAxis.y, zAxis.z, dXY, dY, dX, dAxis, d1, dZX, dYZ);
+                    total++;
+                }
+                if (dYZ > 0.5) {
+                    altered += (yAxis + zAxis) * 2 + GetPoint(xAxis.x, -yAxis.y, -zAxis.z, dYZ, dAxis, dZ, dY, dZX, d1, dXY);
+                    total++;
+                }
+                if (dZX > 0.5) {
+                    altered += (zAxis + xAxis) * 2 + GetPoint(-xAxis.x, yAxis.y, -zAxis.z, dZX, dZ, dAxis, dX, dYZ, dXY, d1);
+                    total++;
+                }
+                if (dAxis > 0.5) {
+                    altered += axis * 2 + GetPoint(-xAxis.x, -yAxis.y, -zAxis.z, dAxis, dYZ, dZX, dXY, dZ, dX, dY);
+                    total++;
+                }
                 
-                var pt = (me * effMe +
-                          pX * effX + pY * effY + pZ * effZ + 
-                          pXY * effXY + pYZ * effYZ + pZX * effZX + 
-                          axis * effAxis) / total;
+                altered /= total;
+                var pt = new Vector3(
+                    (point.x == 0 ? 1 : altered.x / point.x) * roundPoint.x, 
+                    (point.y == 0 ? 1 : altered.y / point.y) * roundPoint.y, 
+                    (point.z == 0 ? 1 : altered.z / point.z) * roundPoint.z);
+                roundPoint = effector ? (rouding ? pt : altered) : (rouding ? roundPoint : point);
 
                 if (!effector) roundPoint = GetLerpPoint(point, pt, roundPoint);
                 else roundPoint = rouding ? roundPoint : point;
-                // AddDebugPoint(x, y, z, off, pt);
+                // AddDebugPoint(x, y, z, off, point);
             }
             SetTempVertex(x, y, z, off, roundPoint);
         }
@@ -284,6 +360,8 @@ public class RoundingGenerator2 : MeshGenerator {
     }
 
     private Vector3 WriteInternalCorner(bool[] near, Off3D off) {
+        if (near[off]) return off.vec3;
+        
         Vector3 point = off.vec;
         Vector3 roundPoint = off.vec;
         
@@ -337,6 +415,8 @@ public class RoundingGenerator2 : MeshGenerator {
     }
 
     private Vector3 WriteInternalEdge(bool[] near, Off3D off) {
+        if (near[off]) return off.vec3;
+        
         Vector3 point = off.vec;
         Vector3 roundPoint = off.vec;
         
@@ -346,8 +426,14 @@ public class RoundingGenerator2 : MeshGenerator {
         bool pxy = near[off.CloserXY];
         bool pyz = near[off.CloserYZ];
         bool pzx = near[off.CloserZX];
-        int n = (px ? 1 : 0) + (py ? 1 : 0) + (pz ? 1 : 0) + (pxy ? 1 : 0) + (pyz ? 1 : 0) + (pzx ? 1 : 0);
-        if (n == 1) {
+        int pn = (px ? 1 : 0) + (py ? 1 : 0) + (pz ? 1 : 0);
+        int n = pn + (pxy ? 1 : 0) + (pyz ? 1 : 0) + (pzx ? 1 : 0);
+        
+        if (n == 2) {
+            if ((px && pxy) || (px && py) || (py && pxy)) roundPoint.z *= value01;
+            else if ((pz && pyz) || (pz && py) || (py && pyz)) roundPoint.x *= value01;
+            else if ((px && pzx) || (px && pz) || (pz && pzx)) roundPoint.y *= value01;
+        } else if (n == 1) {
             roundPoint = point * ((px || py || pz) ? value02 : value01);
             if (px || pxy || pzx) roundPoint.x = point.x;
             if (py || pxy || pyz) roundPoint.y = point.y;

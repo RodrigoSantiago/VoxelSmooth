@@ -2,11 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MarchingGenerator2 : MeshGenerator {
+public class MarchingTetrahedron : MeshGenerator {
     
     private int width, height, length;
     
-    public MarchingGenerator2(int width, int height, int length) {
+    public MarchingTetrahedron(int width, int height, int length) {
         this.width = width;
         this.height = height;
         this.length = length;
