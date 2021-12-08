@@ -5,7 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class PluginRounding : MonoBehaviour, PluginGenerator {
     public enum Algor {
-        ROUDING, MARCHING
+        ROUDING, MARCHING, MARCHING2
     }
 
     public Algor algorithm = Algor.ROUDING;
@@ -62,14 +62,20 @@ public class PluginRounding : MonoBehaviour, PluginGenerator {
     }
 
     public void Recalculate() {
-        var emitter = new MeshEmitter(true);
+        MeshEmitter emitter = null;
         Mesh mesh = null; 
         if (algorithm == Algor.ROUDING) {
             var generator = new RoundingGenerator2(chunk.Width, chunk.Height, chunk.Length, rouding, effector);
+            emitter = new MeshEmitter(true);
             generator.Generate(chunk, emitter);
             
         } else if (algorithm == Algor.MARCHING) {
             var generator = new MarchingGenerator(chunk.Width, chunk.Height, chunk.Length);
+            emitter = new MeshEmitter(true);
+            generator.Generate(chunk, emitter);
+        } else if (algorithm == Algor.MARCHING2) {
+            var generator = new MarchingGenerator2(chunk.Width, chunk.Height, chunk.Length);
+            emitter = new MeshEmitter(false);
             generator.Generate(chunk, emitter);
         }
 
