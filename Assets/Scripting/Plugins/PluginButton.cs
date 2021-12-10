@@ -7,6 +7,7 @@ public class PluginButton : MonoBehaviour {
     public Color color0;
     public Color color1;
     public Color color2;
+    public Color color3;
     public Material mat01;
     public Material mat02;
     private Vector3Int pos;
@@ -21,7 +22,9 @@ public class PluginButton : MonoBehaviour {
     }
 
     private void Update() {
-        if (plugin.GetPoint(pos.x, pos.y, pos.z) / 1000f > 0.5) {
+        if (plugin.GetPoint(pos.x, pos.y, pos.z) < 0) {
+            _renderer.material.color = Color.Lerp(color0, color3, -plugin.GetPoint(pos.x, pos.y, pos.z) / 1000f * 2);
+        } else if (plugin.GetPoint(pos.x, pos.y, pos.z) / 1000f > 0.5) {
             _renderer.material.color = Color.Lerp(color0, color2, (plugin.GetPoint(pos.x, pos.y, pos.z) / 1000f - 0.5f) * 2f);
         } else {
             _renderer.material.color = Color.Lerp(color0, color1, plugin.GetPoint(pos.x, pos.y, pos.z) / 1000f * 2);

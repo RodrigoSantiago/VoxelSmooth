@@ -16,94 +16,8 @@ public class MarchingGenerator2 : MeshGenerator {
     public override Mesh Regenerate(Chunk chunk, Mesh mesh, int x, int y, int z, int width, int height, int length) {
 	    return null;
     }
-
-    private int rotateX(int edge) {
-	    switch (edge) {
-		    case 0 : return 4;
-		    case 1 : return 9;
-		    case 2 : return 0;
-		    case 3 : return 8;
-		    case 4 : return 6;
-		    case 5 : return 10;
-		    case 6 : return 2;
-		    case 7 : return 11;
-		    case 8 : return 7;
-		    case 9 : return 5;
-		    case 10 : return 1;
-		    case 11 : return 3;
-	    }
-
-	    return edge;
-    }
     
-    private int rotateZ(int edge) {
-	    switch (edge) {
-		    case 0 : return 8;
-		    case 1 : return 3;
-		    case 2 : return 11;
-		    case 3 : return 7;
-		    case 4 : return 9;
-		    case 5 : return 1;
-		    case 6 : return 10;
-		    case 7 : return 5;
-		    case 8 : return 4;
-		    case 9 : return 0;
-		    case 10 : return 2;
-		    case 11 : return 6;
-	    }
 
-	    return edge;
-    }
-
-    private int[] rotateX(int[] intro) {
-	    int[] rot = new int[intro.Length];
-	    for (int i = 0; i < intro.Length; i++) {
-		    rot[i] = rotateX(intro[i]);
-	    }
-
-	    return rot;
-    }
-
-    private int[] rotateZ(int[] intro) {
-	    int[] rot = new int[intro.Length];
-	    for (int i = 0; i < intro.Length; i++) {
-		    rot[i] = rotateZ(intro[i]);
-	    }
-
-	    return rot;
-    }
-
-    private bool compare(int[] src, int[] dst) {
-	    for (int i = 0; i < src.Length / 3; i += 3) {
-		    bool cont = false;
-		    for (int j = 0; j < dst.Length / 3; j += 3) {
-			    int a = (dst[j] == src[i] ? 1 : 0) + (dst[j] == src[i + 1] ? 1 : 0) + (dst[j] == src[i + 2] ? 1 : 0);
-			    int b = (dst[j + 1] == src[i] ? 1 : 0) + (dst[j + 1] == src[i + 1] ? 1 : 0) + (dst[j + 1] == src[i + 2] ? 1 : 0);
-			    int c = (dst[j + 2] == src[i] ? 1 : 0) + (dst[j + 2] == src[i + 1] ? 1 : 0) + (dst[j + 2] == src[i + 2] ? 1 : 0);
-			    
-			    if (a == 1 && b == 1 && c == 1) {
-				    cont = true;
-				    break;
-			    }
-		    }
-
-		    if (!cont) {
-			    return false;
-		    }
-	    }
-
-	    return true;
-    }
-
-    private bool contains(List<int[]> list, int[] arr) {
-	    for (int i = 0; i < list.Count; i++) {
-		    int[] v = list[i];
-		    if (compare(v, arr) && compare(arr, v)) return true;
-	    }
-
-	    return false;
-    }
-    
     public override void Generate(Chunk chunk, MeshEmitter meshEmitter) {
 	    this.meshEmitter = meshEmitter;
 	    
@@ -116,120 +30,26 @@ public class MarchingGenerator2 : MeshGenerator {
 		    }
 	    }
 
-	    List<Vector3> vertex = new List<Vector3>();
-	    List<int> index = new List<int>();
 	    float[] voxels = new float[8];
-
-	    List<int[]> possibleTriangles = new List<int[]>();
-	    List<int> edges = new List<int>();
-	    for (int i = 0; i < TriangleConnectionTable.GetLength(0); i++) {
-		    if (TriangleConnectionTable[i, 5] == -1 || TriangleConnectionTable[i, 6] != -1) continue;
-		    
-		    int[] rt01 = new int[15];
-		    for (int j = 0; j < 15; j++) {
-			    rt01[j] = TriangleConnectionTable[i, j];
-		    }
-
-		    int ni = 0;
-		    for (int p = 0; p < 8; p++) {
-			    if ((i & (1 << p)) != 0) {
-				    ni++;
+	    Vector3[] edgeVertex = new Vector3[12 + 27];
+	    for (int i = 0; i < 3; i++) { // z
+		    for (int j = 0; j < 3; j++) { // y
+			    for (int k = 0; k < 3; k++) { // x
+				    edgeVertex[k + j * 3 + i * 9 + 12] = new Vector3(k/2f, j/2f, i/2f);
 			    }
 		    }
-		    
-
-		    bool unic = true;
-		    for (int j = 0; j < 6; j++) {
-			    int eq = 0;
-			    for (int k = 0; k < 6; k++) {
-				    if (k == j) continue;
-				    
-				    if (rt01[j] == rt01[k]) {
-					    unic = false;
-					    break;
-				    }
-
-				    if (EdgeConnection[rt01[j], 0] == EdgeConnection[rt01[k], 0] ||
-				        EdgeConnection[rt01[j], 1] == EdgeConnection[rt01[k], 0] ||
-				        EdgeConnection[rt01[j], 0] == EdgeConnection[rt01[k], 1] ||
-				        EdgeConnection[rt01[j], 1] == EdgeConnection[rt01[k], 1]) {
-					    eq++;
-				    }
-			    }
-
-			    if (eq != 2 || ni == 2) unic = false;
-			    if (!unic) break;
-		    }
-
-		    if (!unic) {
-			    continue;
-		    }
-
-		    /*bool ct = false;
-		    int[] val = rt01;
-		    for (int j = 0; j < 4; j++) {
-			    if (contains(possibleTriangles, val)) {
-				    ct = true;
-				    break;
-			    }
-			    val = rotateX(val);
-		    }
-		    if (ct) continue;
-		    val = rotateZ(val);
-		    for (int j = 0; j < 4; j++) {
-			    if (contains(possibleTriangles, val)) {
-				    ct = true;
-				    break;
-			    }
-			    val = rotateX(val);
-		    }
-		    if (ct) continue;
-		    val = rotateZ(val);
-		    for (int j = 0; j < 4; j++) {
-			    if (contains(possibleTriangles, val)) {
-				    ct = true;
-				    break;
-			    }
-			    val = rotateX(val);
-		    }
-		    if (ct) continue;
-		    val = rotateZ(val);
-		    for (int j = 0; j < 4; j++) {
-			    if (contains(possibleTriangles, val)) {
-				    ct = true;
-				    break;
-			    }
-			    val = rotateX(val);
-		    }
-		    if (ct) continue;
-		    val = rotateZ(rotateX(val));
-		    for (int j = 0; j < 4; j++) {
-			    if (contains(possibleTriangles, val)) {
-				    ct = true;
-				    break;
-			    }
-			    val = rotateX(val);
-		    }
-		    if (ct) continue;
-		    val = rotateZ(rotateZ(val));
-		    for (int j = 0; j < 4; j++) {
-			    if (contains(possibleTriangles, val)) {
-				    ct = true;
-				    break;
-			    }
-			    val = rotateX(val);
-		    }
-		    if (ct) continue;*/
-		    
-		    possibleTriangles.Add(rt01);
-		    edges.Add(CubeEdgeFlags[i]);
-		    Debug.Log(i);
 	    }
-
-	    int n = 0;
-	    for (int x = 0; x < width - 1; x+= 2) {
-		    for (int y = 0; y < height - 1; y+= 2) {
-			    for (int z = 0; z < length - 1; z+= 2) {
+	    TableGenerator tables = new TableGenerator();
+	    tables.GetCases();
+	    
+	    var caseIndex = tables.caseIndex;
+	    Debug.Log(caseIndex.Count);
+	    
+	    int[] triangles = new int[24];
+	    
+	    for (int x = 0; x < width - 1; x++) {
+		    for (int y = 0; y < height - 1; y++) {
+			    for (int z = 0; z < length - 1; z++) {
 				    
 				    for (int i = 0; i < 8; i++) {
 					    int ix = x + VertexOffset[i, 0];
@@ -239,54 +59,94 @@ public class MarchingGenerator2 : MeshGenerator {
 					    voxels[i] = justTest[ix + iy * width + iz * width * height];
 				    }
 
-				    // March(voxels, x, y, z, vertex, index);
-				    if (n >= possibleTriangles.Count) {
-					    break;
-				    }
-
-				    int edgeFlags = edges[n];
-				    
-				    for (int i = 0; i < 12; i++) {
-					    if ((edgeFlags & (1 << i)) != 0) {
-						    float px = (VertexOffset[EdgeConnection[i, 0], 0] +  VertexOffset[EdgeConnection[i, 1], 0]) / 2f;
-						    float py = (VertexOffset[EdgeConnection[i, 0], 1] +  VertexOffset[EdgeConnection[i, 1], 1]) / 2f;
-						    float pz = (VertexOffset[EdgeConnection[i, 0], 2] +  VertexOffset[EdgeConnection[i, 1], 2]) / 2f;
-						    AddDebugPoint(x, y, z, new Vector3(px, py, pz));
+				    int negFlagIndex = 0;
+				    int flagIndex = 0;
+				    for (int i = 0; i < 8; i++) {
+					    if (voxels[i] <= 0.5f) {
+						    flagIndex |= 1 << i;
+						    if (voxels[i] < 0) {
+							    negFlagIndex |= 1 << i;
+						    }
 					    }
 				    }
-				    
-				    for (int i = 0; i < 5; i++) {
-					    if (possibleTriangles[n][3 * i] < 0) break;
 
-					    var vert1 = possibleTriangles[n][3 * i];
-					    var vert2 = possibleTriangles[n][3 * i + 1];
-					    var vert3 = possibleTriangles[n][3 * i + 2];
-					    
-					    Vector3 v1 = new Vector3(
-						    (VertexOffset[EdgeConnection[vert1, 0], 0] + VertexOffset[EdgeConnection[vert1, 1], 0]) / 2f,
-						    (VertexOffset[EdgeConnection[vert1, 0], 1] + VertexOffset[EdgeConnection[vert1, 1], 1]) / 2f,
-						    (VertexOffset[EdgeConnection[vert1, 0], 2] + VertexOffset[EdgeConnection[vert1, 1], 2]) / 2f);
-					    
-					    Vector3 v2 = new Vector3(
-						    (VertexOffset[EdgeConnection[vert2, 0], 0] + VertexOffset[EdgeConnection[vert2, 1], 0]) / 2f,
-						    (VertexOffset[EdgeConnection[vert2, 0], 1] + VertexOffset[EdgeConnection[vert2, 1], 1]) / 2f,
-						    (VertexOffset[EdgeConnection[vert2, 0], 2] + VertexOffset[EdgeConnection[vert2, 1], 2]) / 2f);
-					    
-					    Vector3 v3 = new Vector3(
-						    (VertexOffset[EdgeConnection[vert3, 0], 0] + VertexOffset[EdgeConnection[vert3, 1], 0]) / 2f,
-						    (VertexOffset[EdgeConnection[vert3, 0], 1] + VertexOffset[EdgeConnection[vert3, 1], 1]) / 2f,
-						    (VertexOffset[EdgeConnection[vert3, 0], 2] + VertexOffset[EdgeConnection[vert3, 1], 2]) / 2f);
-					    
-					    AddTriangle(x, y, z, v1, v2, v3);
+				    //Find which edges are intersected by the surface
+				    int edgeFlags = CubeEdgeFlags[flagIndex];
+
+				    //If the cube is entirely inside or outside of the surface, then there will be no intersections
+				    if (edgeFlags == 0) continue;
+
+				    //Find the point of intersection of the surface with each edge
+				    for (int i = 0; i < 12; i++) {
+					    //if there is an intersection on this edge
+					    if ((edgeFlags & (1 << i)) != 0) {
+						    float offset = GetOffset(Mathf.Clamp01(voxels[EdgeConnection[i, 0]]), Mathf.Clamp01(voxels[EdgeConnection[i, 1]]));
+
+						    edgeVertex[i].x = (VertexOffset[EdgeConnection[i, 0], 0] + offset * EdgeDirection[i, 0]);
+						    edgeVertex[i].y = (VertexOffset[EdgeConnection[i, 0], 1] + offset * EdgeDirection[i, 1]);
+						    edgeVertex[i].z = (VertexOffset[EdgeConnection[i, 0], 2] + offset * EdgeDirection[i, 2]);
+					    }
 				    }
-				    n += 1;
+
+				    int tbIndex = tables.GetOriginIndex(flagIndex);
+				    int tbRot = tables.GetOriginRotation(flagIndex);
+				    if (tbIndex > -1 && tables.GetTriangleList(tbIndex, tbRot, negFlagIndex, triangles)) {
+					    // if (tbRot != 0) continue;
+					    
+					    for (int i = 0; i < 4; i++) {
+						    if (triangles[3 * i] < 0) break;
+						    AddTriangle(x, y, z, 
+						    edgeVertex[triangles[3 * i]],
+						    edgeVertex[triangles[3 * i + 1]],
+						    edgeVertex[triangles[3 * i + 2]]);
+					    }
+				    } else {
+					    for (int i = 0; i < 5; i++) {
+						    if (TriangleConnectionTable[flagIndex, 3 * i] < 0) break;
+
+						    AddTriangle(x, y, z, 
+							    edgeVertex[TriangleConnectionTable[flagIndex, 3 * i]],
+							    edgeVertex[TriangleConnectionTable[flagIndex, 3 * i + 1]],
+							    edgeVertex[TriangleConnectionTable[flagIndex, 3 * i + 2]]);
+					    }
+				    }
 			    }
 		    }
+	    }
+    }
+
+    public void AddCaseTriangle(int x, int y, int z, int flagIndex) {
+	    Vector3[] edgeVertex = new Vector3[12];
+	    int edgeFlags = CubeEdgeFlags[flagIndex];
+
+	    if (edgeFlags == 0) return;
+
+	    for (int i = 0; i < 12; i++) {
+		    //if there is an intersection on this edge
+		    if ((edgeFlags & (1 << i)) != 0) {
+			    float offset = 0.5f;
+
+			    edgeVertex[i].x = (VertexOffset[EdgeConnection[i, 0], 0] + offset * EdgeDirection[i, 0]);
+			    edgeVertex[i].y = (VertexOffset[EdgeConnection[i, 0], 1] + offset * EdgeDirection[i, 1]);
+			    edgeVertex[i].z = (VertexOffset[EdgeConnection[i, 0], 2] + offset * EdgeDirection[i, 2]);
+		    }
+	    }
+	    
+	    for (int i = 0; i < 5; i++) {
+		    if (TriangleConnectionTable[flagIndex, 3 * i] < 0) break;
+
+		    AddTriangle(x, y, z, 
+			    edgeVertex[TriangleConnectionTable[flagIndex, 3 * i]],
+			    edgeVertex[TriangleConnectionTable[flagIndex, 3 * i + 1]],
+			    edgeVertex[TriangleConnectionTable[flagIndex, 3 * i + 2]]);
 	    }
     }
     
     public void AddTriangle(int x, int y, int z, Vector3 p1, Vector3 p2, Vector3 p3) {
 	    Vector3 cp = new Vector3(x, y, z);
+	    //p1 = (p1 * 0.85f) + cp + Vector3.one * 0.075f;
+	    //p2 = (p2 * 0.85f) + cp + Vector3.one * 0.075f;
+	    //p3 = (p3 * 0.85f) + cp + Vector3.one * 0.075f;
 	    p1 = p1 + cp;
 	    p2 = p2 + cp;
 	    p3 = p3 + cp;
@@ -331,6 +191,8 @@ public class MarchingGenerator2 : MeshGenerator {
     }
     
     private float GetOffset(float d1, float d2) {
+	    if (d1 < 0) d1 = 0;
+	    if (d2 < 0) d2 = 0;
 	    float delta = d2 - d1;
 	    return Mathf.Abs(delta) < 0.0001f ? 0.5f : (0.5f - d1) / delta;
     }

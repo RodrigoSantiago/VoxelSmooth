@@ -56,7 +56,16 @@ public class PluginRounding : MonoBehaviour, PluginGenerator {
     }
 
     public void SetPoint(int x, int y, int z, int v) {
-        chunk.Set(x, y, z, Mathf.Clamp(chunk.Get(x, y, z) + 143 * v, 0, 1000));
+        if (v < 0 && chunk.Get(x, y, z) == 0) {
+            chunk.Set(x, y, z, -1000);
+        } else {
+            if (chunk.Get(x, y, z) == -1000) {
+                chunk.Set(x, y, z, 0);
+            } else {
+                chunk.Set(x, y, z, Mathf.Clamp(chunk.Get(x, y, z) + 143 * v, 0, 1000));
+            }
+        }
+
         //chunk.Set(x, y, z, chunk.Get(x, y, z) == 1000 ? 0 : 1000);
         Recalculate();
     }

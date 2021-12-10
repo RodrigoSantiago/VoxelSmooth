@@ -146,7 +146,7 @@ public class RoundingGenerator2 : MeshGenerator {
 
     public Vector3 GetEffectPoint(Vector3 point, Vector3 center, float delta) {
         return Vector3.Lerp(point, center, 1 + ((0.5f - delta) / (-delta) - 0.5f) / 0.5f);
-        return Vector3.Lerp(point, center, Mathf.Clamp01((delta - 0.5f) * 2f));
+        //return Vector3.Lerp(point, center, Mathf.Clamp01((delta - 0.5f) * 2f));
     }
 
     public Vector3 GetLerpPoint(Vector3 point, Vector3 pt, Vector3 roundPoint) {
