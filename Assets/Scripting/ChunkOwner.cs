@@ -17,8 +17,12 @@ public class ChunkOwner : MonoBehaviour {
             var objects = GameObject.FindGameObjectsWithTag("Point");
             foreach (var obj in objects) {
                 var p = obj.transform.position;
-                chunk.Set(Mathf.RoundToInt(p.x), Mathf.RoundToInt(p.y), Mathf.RoundToInt(p.z), 1);
+                chunk.Set(Mathf.RoundToInt(p.x), Mathf.RoundToInt(p.y), Mathf.RoundToInt(p.z), 1000);
             }
+            chunk.Set(3, 3, 2, 750);
+            chunk.Set(4, 3, 2, 750);
+            //chunk.Set(3, 2, 2, 750);
+            //chunk.Set(4, 2, 2, 750);
         } else {
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
