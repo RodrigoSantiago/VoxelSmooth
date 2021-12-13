@@ -20,9 +20,9 @@ public class ChunkOwner : MonoBehaviour {
                 chunk.Set(Mathf.RoundToInt(p.x), Mathf.RoundToInt(p.y), Mathf.RoundToInt(p.z), 1000);
             }
             chunk.Set(3, 3, 2, 750);
-            chunk.Set(4, 3, 2, 750);
+            //chunk.Set(4, 3, 2, 750);
             //chunk.Set(3, 2, 2, 750);
-            //chunk.Set(4, 2, 2, 750);
+            chunk.Set(4, 2, 2, 750);
         } else {
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {

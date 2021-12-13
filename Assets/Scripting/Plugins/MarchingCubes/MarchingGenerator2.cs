@@ -40,11 +40,117 @@ public class MarchingGenerator2 : MeshGenerator {
 	    }
 
 	    float[] voxels = new float[8];
+	    
+	    for (int i = 0; i < 12; i++) {
+		    float offset = 0.5f;
+		    edgeVertex[i].x = (VertexOffset[EdgeConnection[i, 0], 0] + offset * EdgeDirection[i, 0]);
+		    edgeVertex[i].y = (VertexOffset[EdgeConnection[i, 0], 1] + offset * EdgeDirection[i, 1]);
+		    edgeVertex[i].z = (VertexOffset[EdgeConnection[i, 0], 2] + offset * EdgeDirection[i, 2]);
+	    }
+	    
 	    TableGenerator tables = new TableGenerator();
 	    tables.GetCases();
-	    
 	    var caseIndex = tables.caseIndex;
-	    Debug.Log(caseIndex.Count);
+	    
+	    for (int i = 0; i < caseIndex.Count; i++) {
+		    AddCaseTriangle(i % 8, 0, i / 8 * 2, caseIndex[i]);
+		    int x = i % 8;
+		    int y = 1;
+		    int z = i / 8 * 2;
+		    for (int j = 0; j < tables.triangleList.GetLength(1); j += 2) {
+			    if (tables.triangleList[i, j] == -1) break;
+
+			    AddTriangle(x, y, z, edgeVertex[13 + 12], edgeVertex[tables.triangleList[i, j]],
+				    edgeVertex[tables.triangleList[i, j + 1]]);
+		    }
+	    }
+
+	    // PROBLEMAAAAAAAO !!!
+	    // Se um 'triangulo solitario' nao for afetado, ele ficara bugadao no 13! - Que que faz neste caso? Sera q fica muito feio?
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[1]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{0, 8, 8, 3, 3, 0, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[2]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{3, 1, 1, 9, 9, 8, 8, 3, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[3]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{0, 8, 8, 3, 3, 0, 10, 1, 1, 2, 2, 10, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[4]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{2, 10, 10, 9, 9, 8, 8, 3, 3, 2, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[5]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{8, 11, 11, 10, 10, 9, 9, 8, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[6]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{2, 10, 10, 1, 1, 2, 8, 4, 4, 7, 7, 8, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[7]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{7, 3, 3, 0, 0, 4, 4, 7, 2, 10, 10, 1, 1, 2, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[8]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{2, 10, 10, 9, 9, 4, 4, 7, 7, 3, 3, 2, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[9]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{0, 1, 1, 9, 9, 0, 3, 11, 11, 2, 2, 3, 8, 4, 4, 7, 7, 8, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[10]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{2, 1, 1, 9, 9, 4, 4, 7, 7, 11, 11, 2, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[11]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{0, 4, 4, 7, 7, 11, 11, 10, 10, 1, 1, 0, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[12]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{10, 9, 9, 0, 0, 3, 3, 11, 11, 10, 8, 4, 4, 7, 7, 8, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[13]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{10, 9, 9, 4, 4, 7, 7, 11, 11, 10, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[14]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{10, 1, 1, 3, 3, 11, 11, 10, 5, 7, 7, 8, 8, 9, 9, 5, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[15]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{9, 5, 5, 7, 7, 11, 11, 10, 10, 1, 1, 0, 0, 9, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[16]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{10, 5, 5, 7, 7, 11, 11, 10, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[17]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{2, 3, 3, 11, 11, 2, 6, 5, 5, 10, 10, 6, 1, 9, 9, 0, 0, 1, 8, 4, 4, 7, 7, 8, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[18]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{2, 1, 1, 9, 9, 4, 4, 7, 7, 11, 11, 2, 6, 5, 5, 10, 10, 6, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[19]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{6, 5, 5, 9, 9, 4, 4, 7, 7, 11, 11, 6, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[20]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{6, 7, 7, 11, 11, 6, 0, 9, 9, 1, 1, 0, -1});
+	    
+	    //AddCaseTriangle(0, 0, 0, caseIndex[21]);
+	    //AddMarchTriangles(0, 1, 0, new int[]{6, 7, 7, 11, 11, 6, -1});
+	    
+	    AddCaseTriangle(0, 0, 0, caseIndex[22]);
+	    AddMarchTriangles(0, 1, 0, new int[]{-1});
+	    
+	    //caseIndex[16], new int[]{7, 11, 11, 10, 10,  5, 5, 7}
+	    /*int mask = 0;
+	    int[][] triangleList = tables.ComputeTriangles(caseIndex[19], new int[]{5, 9, 6, 5, 11, 6, 7, 11, 4, 7, 9, 4}, out mask);
+	    Debug.Log("Mask : " + Convert.ToString(caseIndex[19], 2) + " is " + Convert.ToString(mask, 2));
+
+	    for (int i = 0; i < triangleList.Length; i++) {
+		    AddMarchTriangles(i % 8, i / 8, 0, triangleList[i]);
+	    }
+	    
+	    
+	    triangleList = tables.ComputeTriangles(caseIndex[16], new int[]{7, 11, 11, 10, 10, 5, 5, 7}, out mask);
+	    Debug.Log("Mask : " + Convert.ToString(caseIndex[16], 2) + " is " + Convert.ToString(mask, 2));
+
+	    for (int i = 0; i < triangleList.Length; i++) {
+		    AddMarchTriangles(i % 8, i / 8, 2, triangleList[i]);
+	    }*/
+	    if (true) return;
 	    
 	    int[] triangles = new int[32];
 	    for (int x = 0; x < width - 1; x++) {
@@ -91,11 +197,11 @@ public class MarchingGenerator2 : MeshGenerator {
 				    int tbIndex = tables.GetOriginIndex(flagIndex);
 				    int tbRot = tables.GetOriginRotation(flagIndex);
 				    
-				    //if (tbIndex != 2 || tbRot != 0) continue;
+				    if (tbIndex != 3 || tbRot != 0) continue;
 				    
 				    //if (tbRot != 0) continue;
 				    if (negFlagIndex != 0) {
-					    // AddCubicTriangles(x, y, z, voxels);
+					    AddCubicTriangles(x, y, z, voxels);
 				    }
 				    
 				    if (tbIndex > -1 && tables.GetTriangleList(tbIndex, tbRot, negFlagIndex, triangles)) {
@@ -120,6 +226,15 @@ public class MarchingGenerator2 : MeshGenerator {
 				    }
 			    }
 		    }
+	    }
+    }
+
+    public void AddMarchTriangles(int x, int y, int z, int[] table) {
+	    for (int j = 0; j < table.Length; j += 2) {
+		    if (table[j] == -1) return;
+		    
+		    AddTriangle(x, y, z, edgeVertex[13 + 12], edgeVertex[table[j]], edgeVertex[table[j + 1]]);
+		    AddTriangle(x, y, z, edgeVertex[13 + 12], edgeVertex[table[j]], edgeVertex[table[j + 1]]);
 	    }
     }
 
