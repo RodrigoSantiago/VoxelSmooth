@@ -6,6 +6,7 @@ using UnityEngine;
 public class MeshEmitter {
     
     private List<Vector3> points = new List<Vector3>();
+    private List<Vector3> normals = new List<Vector3>();
     private List<int> triangles = new List<int>();
     private bool reduce;
 
@@ -37,6 +38,12 @@ public class MeshEmitter {
         points.Add(p3);
     }
 
+    public void AddLists(List<Vector3> vertex, List<int> indicex, List<Vector3> normals) {
+        this.points = vertex;
+        this.triangles = indicex;
+        this.normals = normals;
+    }
+
     public void AddLists(List<Vector3> vertex, List<int> indicex) {
         this.points = vertex;
         this.triangles = indicex;
@@ -44,8 +51,15 @@ public class MeshEmitter {
 
     public Mesh Build() {
         Mesh mesh = new Mesh();
-        
-        if (reduce) {
+        if (normals.Count > 0) {
+            var ver = points.ToArray();
+            var tri = triangles.ToArray();
+            var nor = normals.ToArray();
+            mesh.vertices = ver;
+            mesh.triangles = tri;
+            mesh.normals = nor;
+            mesh.RecalculateBounds();
+        } else if (reduce) {
             List<Vector3> npoints = new List<Vector3>();
             List<int> ntriangles = new List<int>();
             for (int i = 0; i < triangles.Count; i++) {
@@ -61,15 +75,16 @@ public class MeshEmitter {
             var tri = ntriangles.ToArray();
             mesh.vertices = ver;
             mesh.triangles = tri;
+            mesh.RecalculateBounds();
+            mesh.RecalculateNormals();
         } else {
             var ver = points.ToArray();
             var tri = triangles.ToArray();
             mesh.vertices = ver;
             mesh.triangles = tri;
+            mesh.RecalculateBounds();
+            mesh.RecalculateNormals();
         }
-
-        mesh.RecalculateBounds();
-        mesh.RecalculateNormals();
         mesh.RecalculateTangents();
         
         points.Clear();

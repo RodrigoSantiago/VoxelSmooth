@@ -106,7 +106,7 @@ public class TableGenerator {
 		3, //0,
 		0, //1,
 		1, //2,
-	    3, //3,
+	    2, //3,
 		7, //4,
 		4, //5,
 		5, //6,
@@ -334,7 +334,7 @@ public class TableGenerator {
 		if (rot == 14) return rotListY[rotListY[rotListY[rotListX[rotListX[point]]]]];
 		if (rot == 15) return rotListY[rotListY[rotListY[rotListX[rotListX[rotListX[point]]]]]];
 			
-		if (rot == 16) return rotListY[rotListX[point]];
+		if (rot == 16) return rotListX[rotListY[point]];
 		if (rot == 17) return rotListX[rotListY[rotListX[point]]];
 		if (rot == 18) return rotListX[rotListY[rotListX[rotListX[point]]]];
 		if (rot == 19) return rotListX[rotListY[rotListX[rotListX[rotListX[point]]]]];
@@ -348,9 +348,84 @@ public class TableGenerator {
 	}
 
 	public bool GetTriangleList(int caseId, int rot, int negFlagIndex, int[] triangles) {
-		negFlagIndex = RotateFlag(negFlagIndex, rot) & caseFlags[caseId, 0];
+		negFlagIndex = RotateFlag(negFlagIndex, rot);
+		
+		bool[] totalP = new bool[8];
+		for (int i = 0; i < 8; i++) {
+			totalP[i] = (negFlagIndex & (1 << i)) == (1 << i);
+		}
 
-		for (int i = 1; i < caseFlags.GetLength(1); i += 2) {
+		bool affected = false;
+		int allSize = 0;
+		for (int i = 0; i < triangleList.GetLength(1); i += 2) {
+			int edge1 = triangleList[caseId, i];
+			int edge2 = triangleList[caseId, i + 1];
+			if (edge1 == -1) break;
+
+			// can work with triangle and squares!!!
+			if (i + 5 < triangleList.GetLength(1)) {
+				int edge3 = triangleList[caseId, i + 2];
+				int edge4 = triangleList[caseId, i + 3];
+				int edge5 = triangleList[caseId, i + 4];
+				int edge6 = triangleList[caseId, i + 5];
+				if (edge2 == edge3 && edge4 == edge5 && edge6 == edge1) {
+					bool e1 = (totalP[EdgeConnection[edge1, 0]] || totalP[EdgeConnection[edge1, 1]]);
+					bool e2 = (totalP[EdgeConnection[edge3, 0]] || totalP[EdgeConnection[edge3, 1]]);
+					bool e3 = (totalP[EdgeConnection[edge5, 0]] || totalP[EdgeConnection[edge5, 1]]);
+					if (!e1 && !e2 && !e3) {
+						triangles[allSize++] = edge1 < 12 ? RotateEdgePoint(edge1, rot) : RotateCubePoint(edge1 - 12, rot) + 12;
+						triangles[allSize++] = edge3 < 12 ? RotateEdgePoint(edge3, rot) : RotateCubePoint(edge3 - 12, rot) + 12;
+						triangles[allSize++] = edge5 < 12 ? RotateEdgePoint(edge5, rot) : RotateCubePoint(edge5 - 12, rot) + 12;
+						i += 4;
+						continue;
+					}
+				} else if (i + 7 < triangleList.GetLength(1)) {
+					int edge7 = triangleList[caseId, i + 6];
+					int edge8 = triangleList[caseId, i + 7];
+					if (edge2 == edge3 && edge4 == edge5 && edge6 == edge7 && edge8 == edge1) {
+						bool e1 = (totalP[EdgeConnection[edge1, 0]] || totalP[EdgeConnection[edge1, 1]]);
+						bool e2 = (totalP[EdgeConnection[edge3, 0]] || totalP[EdgeConnection[edge3, 1]]);
+						bool e3 = (totalP[EdgeConnection[edge5, 0]] || totalP[EdgeConnection[edge5, 1]]);
+						bool e4 = (totalP[EdgeConnection[edge7, 0]] || totalP[EdgeConnection[edge7, 1]]);
+						if (!e1 && !e2 && !e3 && !e4) {
+							triangles[allSize++] = edge1 < 12 ? RotateEdgePoint(edge1, rot) : RotateCubePoint(edge1 - 12, rot) + 12;
+							triangles[allSize++] = edge3 < 12 ? RotateEdgePoint(edge3, rot) : RotateCubePoint(edge3 - 12, rot) + 12;
+							triangles[allSize++] = edge5 < 12 ? RotateEdgePoint(edge5, rot) : RotateCubePoint(edge5 - 12, rot) + 12;
+							
+							triangles[allSize++] = edge1 < 12 ? RotateEdgePoint(edge1, rot) : RotateCubePoint(edge1 - 12, rot) + 12;
+							triangles[allSize++] = edge5 < 12 ? RotateEdgePoint(edge5, rot) : RotateCubePoint(edge5 - 12, rot) + 12;
+							triangles[allSize++] = edge7 < 12 ? RotateEdgePoint(edge7, rot) : RotateCubePoint(edge7 - 12, rot) + 12;
+							i += 6;
+						}
+					}
+				}
+			}
+			
+			bool iEdge1 = (totalP[EdgeConnection[edge1, 0]] || totalP[EdgeConnection[edge1, 1]]);
+			bool iEdge2 = (totalP[EdgeConnection[edge2, 0]] || totalP[EdgeConnection[edge2, 1]]);
+			if (iEdge1 && iEdge2) {
+				affected = true;
+				continue;
+			} 
+				
+			if (iEdge1) {
+				edge1 = edgeShift[edge1, edge2] + 12;
+				affected = true;
+			} else if (iEdge2) {
+				edge2 = edgeShift[edge2, edge1] + 12;
+				affected = true;
+			}
+
+			triangles[allSize++] = 13 + 12;
+			triangles[allSize++] = edge1 < 12 ? RotateEdgePoint(edge1, rot) : RotateCubePoint(edge1 - 12, rot) + 12;
+			triangles[allSize++] = edge2 < 12 ? RotateEdgePoint(edge2, rot) : RotateCubePoint(edge2 - 12, rot) + 12;
+		}
+
+		triangles[allSize] = -1;
+
+		return affected;
+		
+		/*for (int i = 1; i < caseFlags.GetLength(1); i += 2) {
 			if (caseFlags[caseId, i] == negFlagIndex) {
 				int listId = caseFlags[caseId, i + 1];
 				for (int j = 0; j < caseTriangles.GetLength(1); j++) {
@@ -366,11 +441,11 @@ public class TableGenerator {
 			}
 		}
 
-		return false;
+		return false;*/
 	}
 
 	public void AddStoreRot(int store, int rot) {
-		if (store == 21) {
+		/*if (store == 21) {
 			storedIndex.Add(0);
 			
 		} else if (store == 16) {
@@ -385,8 +460,9 @@ public class TableGenerator {
 		} else {
 			storedIndex.Add(-1);
 			
-		}
+		}*/
 
+		storedIndex.Add(store);
 		rotateIndex.Add(rot);
 	}
 
@@ -668,7 +744,7 @@ public class TableGenerator {
 		{2, 3, 3, 11, 11, 2, 6, 5, 5, 10, 10, 6, 1, 9, 9, 0, 0, 1, 8, 4, 4, 7, 7, 8},
 		{2, 1, 1, 9, 9, 4, 4, 7, 7, 11, 11, 2, 6, 5, 5, 10, 10, 6, -1, -1, -1, -1, -1, -1},
 		{6, 5, 5, 9, 9, 4, 4, 7, 7, 11, 11, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-		{6, 7, 7, 11, 11, 6, 0, 9, 9, 1, 1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+		{6, 7, 11, 6, 7, 11, 0, 9, 1, 0, 9, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 		{6, 7, 7, 11, 11, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 		{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
 	};

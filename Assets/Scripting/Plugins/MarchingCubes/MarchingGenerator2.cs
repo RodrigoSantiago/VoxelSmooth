@@ -52,180 +52,172 @@ public class MarchingGenerator2 : MeshGenerator {
 	    tables.GetCases();
 	    var caseIndex = tables.caseIndex;
 	    
-	    for (int i = 0; i < caseIndex.Count; i++) {
-		    AddCaseTriangle(i % 8, 0, i / 8 * 2, caseIndex[i]);
-		    int x = i % 8;
+	    /*for (int i = 15; i < 16; i++) {
+		    AddCaseTriangle(i % 7, 0, i / 7 * 2, caseIndex[i]);
+		    int x = i % 7;
 		    int y = 1;
-		    int z = i / 8 * 2;
+		    int z = i / 7* 2;
 		    for (int j = 0; j < tables.triangleList.GetLength(1); j += 2) {
 			    if (tables.triangleList[i, j] == -1) break;
 
 			    AddTriangle(x, y, z, edgeVertex[13 + 12], edgeVertex[tables.triangleList[i, j]],
 				    edgeVertex[tables.triangleList[i, j + 1]]);
 		    }
-	    }
-
-	    // PROBLEMAAAAAAAO !!!
-	    // Se um 'triangulo solitario' nao for afetado, ele ficara bugadao no 13! - Que que faz neste caso? Sera q fica muito feio?
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[1]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{0, 8, 8, 3, 3, 0, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[2]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{3, 1, 1, 9, 9, 8, 8, 3, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[3]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{0, 8, 8, 3, 3, 0, 10, 1, 1, 2, 2, 10, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[4]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{2, 10, 10, 9, 9, 8, 8, 3, 3, 2, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[5]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{8, 11, 11, 10, 10, 9, 9, 8, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[6]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{2, 10, 10, 1, 1, 2, 8, 4, 4, 7, 7, 8, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[7]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{7, 3, 3, 0, 0, 4, 4, 7, 2, 10, 10, 1, 1, 2, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[8]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{2, 10, 10, 9, 9, 4, 4, 7, 7, 3, 3, 2, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[9]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{0, 1, 1, 9, 9, 0, 3, 11, 11, 2, 2, 3, 8, 4, 4, 7, 7, 8, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[10]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{2, 1, 1, 9, 9, 4, 4, 7, 7, 11, 11, 2, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[11]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{0, 4, 4, 7, 7, 11, 11, 10, 10, 1, 1, 0, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[12]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{10, 9, 9, 0, 0, 3, 3, 11, 11, 10, 8, 4, 4, 7, 7, 8, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[13]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{10, 9, 9, 4, 4, 7, 7, 11, 11, 10, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[14]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{10, 1, 1, 3, 3, 11, 11, 10, 5, 7, 7, 8, 8, 9, 9, 5, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[15]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{9, 5, 5, 7, 7, 11, 11, 10, 10, 1, 1, 0, 0, 9, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[16]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{10, 5, 5, 7, 7, 11, 11, 10, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[17]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{2, 3, 3, 11, 11, 2, 6, 5, 5, 10, 10, 6, 1, 9, 9, 0, 0, 1, 8, 4, 4, 7, 7, 8, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[18]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{2, 1, 1, 9, 9, 4, 4, 7, 7, 11, 11, 2, 6, 5, 5, 10, 10, 6, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[19]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{6, 5, 5, 9, 9, 4, 4, 7, 7, 11, 11, 6, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[20]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{6, 7, 7, 11, 11, 6, 0, 9, 9, 1, 1, 0, -1});
-	    
-	    //AddCaseTriangle(0, 0, 0, caseIndex[21]);
-	    //AddMarchTriangles(0, 1, 0, new int[]{6, 7, 7, 11, 11, 6, -1});
-	    
-	    AddCaseTriangle(0, 0, 0, caseIndex[22]);
-	    AddMarchTriangles(0, 1, 0, new int[]{-1});
-	    
-	    //caseIndex[16], new int[]{7, 11, 11, 10, 10,  5, 5, 7}
-	    /*int mask = 0;
-	    int[][] triangleList = tables.ComputeTriangles(caseIndex[19], new int[]{5, 9, 6, 5, 11, 6, 7, 11, 4, 7, 9, 4}, out mask);
-	    Debug.Log("Mask : " + Convert.ToString(caseIndex[19], 2) + " is " + Convert.ToString(mask, 2));
-
-	    for (int i = 0; i < triangleList.Length; i++) {
-		    AddMarchTriangles(i % 8, i / 8, 0, triangleList[i]);
-	    }
-	    
-	    
-	    triangleList = tables.ComputeTriangles(caseIndex[16], new int[]{7, 11, 11, 10, 10, 5, 5, 7}, out mask);
-	    Debug.Log("Mask : " + Convert.ToString(caseIndex[16], 2) + " is " + Convert.ToString(mask, 2));
-
-	    for (int i = 0; i < triangleList.Length; i++) {
-		    AddMarchTriangles(i % 8, i / 8, 2, triangleList[i]);
 	    }*/
-	    if (true) return;
+
+	    int[] triangles = new int[12 * 3];
+	    Vector3[] normals = new Vector3[12];
 	    
-	    int[] triangles = new int[32];
+	    int[][] trianglesE = new int[6][];
+	    Vector3[][] normalsE = new Vector3[6][];
+	    for (int i = 0; i < 6; i++) {
+		    trianglesE[i] = new int[12 * 3];
+		    normalsE[i] = new Vector3[12];
+	    }
+
 	    for (int x = 0; x < width - 1; x++) {
 		    for (int y = 0; y < height - 1; y++) {
 			    for (int z = 0; z < length - 1; z++) {
+
+				    GetTriangles(tables, justTest, x, y, z, triangles, normals);
+					if (triangles[0] == -1) continue;
+					
+				    GetTriangles(tables, justTest, x + 1, y, z, trianglesE[0], normalsE[0]);
+				    GetTriangles(tables, justTest, x - 1, y, z, trianglesE[1], normalsE[1]);
+				    GetTriangles(tables, justTest, x, y + 1, z, trianglesE[2], normalsE[2]);
+				    GetTriangles(tables, justTest, x, y - 1, z, trianglesE[3], normalsE[3]);
+				    GetTriangles(tables, justTest, x, y, z + 1, trianglesE[4], normalsE[4]);
+				    GetTriangles(tables, justTest, x, y, z - 1, trianglesE[5], normalsE[5]);
 				    
-				    for (int i = 0; i < 8; i++) {
-					    int ix = x + VertexOffset[i, 0];
-					    int iy = y + VertexOffset[i, 1];
-					    int iz = z + VertexOffset[i, 2];
-
-					    voxels[i] = justTest[ix + iy * width + iz * width * height];
-				    }
-
-				    int negFlagIndex = 0;
-				    int flagIndex = 0;
-				    for (int i = 0; i < 8; i++) {
-					    if (voxels[i] <= 0.5f) {
-						    flagIndex |= 1 << i;
-						    if (voxels[i] < 0) {
-							    negFlagIndex |= 1 << i;
-						    }
-					    }
-				    }
-
-				    //Find which edges are intersected by the surface
-				    int edgeFlags = CubeEdgeFlags[flagIndex];
-
-				    //If the cube is entirely inside or outside of the surface, then there will be no intersections
-				    if (edgeFlags == 0) continue;
-
-				    //Find the point of intersection of the surface with each edge
+				    //Calculate Cross Normals
+				    // Get normal from sharing same vertex, IF, share 13+12, it has to share ate least another point to join 13 normal too
 				    for (int i = 0; i < 12; i++) {
-					    //if there is an intersection on this edge
-					    if ((edgeFlags & (1 << i)) != 0) {
-						    float offset = GetOffset(Mathf.Clamp01(voxels[EdgeConnection[i, 0]]), Mathf.Clamp01(voxels[EdgeConnection[i, 1]]));
-
-						    edgeVertex[i].x = (VertexOffset[EdgeConnection[i, 0], 0] + offset * EdgeDirection[i, 0]);
-						    edgeVertex[i].y = (VertexOffset[EdgeConnection[i, 0], 1] + offset * EdgeDirection[i, 1]);
-						    edgeVertex[i].z = (VertexOffset[EdgeConnection[i, 0], 2] + offset * EdgeDirection[i, 2]);
-					    }
-				    }
-
-				    int tbIndex = tables.GetOriginIndex(flagIndex);
-				    int tbRot = tables.GetOriginRotation(flagIndex);
-				    
-				    if (tbIndex != 3 || tbRot != 0) continue;
-				    
-				    //if (tbRot != 0) continue;
-				    if (negFlagIndex != 0) {
-					    AddCubicTriangles(x, y, z, voxels);
-				    }
-				    
-				    if (tbIndex > -1 && tables.GetTriangleList(tbIndex, tbRot, negFlagIndex, triangles)) {
-						
-					    for (int i = 0; i < 8; i++) {
-						    if (triangles[2 * i] < 0) break;
-						    
-						    AddTriangle(x, y, z, 
-						    edgeVertex[13 + 12],
-						    edgeVertex[triangles[2 * i]],
-						    edgeVertex[triangles[2 * i + 1]]);
-					    }
-				    } else {
-					    for (int i = 0; i < 6; i++) {
-						    if (TriangleConnectionTable[flagIndex, 3 * i] < 0) break;
-
-						    AddTriangle(x, y, z, 
-							    edgeVertex[TriangleConnectionTable[flagIndex, 3 * i]],
-							    edgeVertex[TriangleConnectionTable[flagIndex, 3 * i + 1]],
-							    edgeVertex[TriangleConnectionTable[flagIndex, 3 * i + 2]]);
-					    }
+					    int edge1 = triangles[i * 3];
+					    int edge2 = triangles[i * 3 + 1];
+					    int edge3 = triangles[i * 3 + 2];
+					    Vector3 n = normals[i];
+					    // Cada Edge pode pegar 2 proximos
+					    
 				    }
 			    }
 		    }
+	    }
+    }
+
+    public static int[,] edgeNear = {
+	    {5, 4, 3, 2},
+	    {5, 5, 0, 3},
+	    {2, 0, 5, 6},
+	    {1, 1, 5, 7},
+	    {3, 6, 4, 0},
+	    {0, 7, 4, 1},
+	    {2, 4, 4, 2},
+	    {1, 5, 4, 3},
+	    {3, 11, 1, 9},
+	    {3, 10, 0, 8},
+	    {2, 9, 0, 11},
+	    {1, 10, 2, 8},
+    };
+
+    public Vector3 CalculateNormal(Vector3 p1, Vector3 p2, Vector3 p3) {
+	    Vector3 A = p2 - p1;
+	    Vector3 B = p3 - p1;
+
+	    float Nx = A.y * B.z - A.z * B.y;
+	    float Ny = A.z * B.x - A.x * B.z;
+	    float Nz = A.x * B.y - A.y * B.x;
+	    
+	    return new Vector3(Nx, Ny, Nz);
+    }
+
+    public void GetTriangles(TableGenerator tables, float[] cubes, int x, int y, int z, int[] triangles, Vector3[] normals) {
+	    if (x < 0 || x >= width - 1 || y < 0 || y >= height - 1 || z < 0 || z >= length - 1) {
+		    triangles[0] = -1;
+		    return;
+	    }
+	    
+	    float[] voxels = new float[8];
+	    for (int i = 0; i < 8; i++) {
+		    int ix = x + VertexOffset[i, 0];
+		    int iy = y + VertexOffset[i, 1];
+		    int iz = z + VertexOffset[i, 2];
+
+		    voxels[i] = cubes[ix + iy * width + iz * width * height];
+	    }
+	    
+	    int negFlagIndex = 0;
+	    int flagIndex = 0;
+	    for (int i = 0; i < 8; i++) {
+		    if (voxels[i] <= 0.5f) {
+			    flagIndex |= 1 << i;
+			    if (voxels[i] < 0) {
+				    negFlagIndex |= 1 << i;
+			    }
+		    }
+	    }
+
+	    //Find which edges are intersected by the surface
+	    int edgeFlags = CubeEdgeFlags[flagIndex];
+
+	    //If the cube is entirely inside or outside of the surface, then there will be no intersections
+	    if (edgeFlags == 0) {
+		    triangles[0] = -1;
+		    return;
+	    }
+
+	    //Find the point of intersection of the surface with each edge
+	    for (int i = 0; i < 12; i++) {
+		    //if there is an intersection on this edge
+		    if ((edgeFlags & (1 << i)) != 0) {
+			    float offset = GetOffset(Mathf.Clamp01(voxels[EdgeConnection[i, 0]]),
+				    Mathf.Clamp01(voxels[EdgeConnection[i, 1]]));
+
+			    edgeVertex[i].x = (VertexOffset[EdgeConnection[i, 0], 0] + offset * EdgeDirection[i, 0]);
+			    edgeVertex[i].y = (VertexOffset[EdgeConnection[i, 0], 1] + offset * EdgeDirection[i, 1]);
+			    edgeVertex[i].z = (VertexOffset[EdgeConnection[i, 0], 2] + offset * EdgeDirection[i, 2]);
+		    }
+	    }
+
+	    int tbIndex = tables.GetOriginIndex(flagIndex);
+	    int tbRot = tables.GetOriginRotation(flagIndex);
+
+	    if (negFlagIndex != 0) {
+		    // AddCubicTriangles(x, y, z, voxels);
+	    }
+
+	    if (tbIndex > -1 && tables.GetTriangleList(tbIndex, tbRot, negFlagIndex, triangles)) {
+
+		    for (int i = 0; i < 8; i++) {
+			    if (triangles[3 * i] < 0) break;
+
+			    AddTriangle(x, y, z,
+				    edgeVertex[triangles[3 * i]],
+				    edgeVertex[triangles[3 * i + 1]],
+				    edgeVertex[triangles[3 * i + 2]]);
+		    }
+	    } else {
+		    for (int i = 0; i < 6; i++) {
+			    if (TriangleConnectionTable[flagIndex, 3 * i] < 0) {
+				    triangles[3 * i] = -1;
+				    break;
+			    }
+			    triangles[3 * i] = TriangleConnectionTable[flagIndex, 3 * i];
+			    triangles[3 * i + 1] = TriangleConnectionTable[flagIndex, 3 * i + 1];
+			    triangles[3 * i + 2] = TriangleConnectionTable[flagIndex, 3 * i + 2];
+
+			    AddTriangle(x, y, z,
+				    edgeVertex[TriangleConnectionTable[flagIndex, 3 * i]],
+				    edgeVertex[TriangleConnectionTable[flagIndex, 3 * i + 1]],
+				    edgeVertex[TriangleConnectionTable[flagIndex, 3 * i + 2]]);
+		    }
+	    }
+
+	    for (int i = 0; i < 12; i++) {
+		    if (triangles[3 * i] < 0) break;
+		    normals[i] = CalculateNormal(
+			    edgeVertex[triangles[3 * i]], 
+			    edgeVertex[triangles[3 * i + 1]],
+			    edgeVertex[triangles[3 * i + 2]]);
 	    }
     }
 
