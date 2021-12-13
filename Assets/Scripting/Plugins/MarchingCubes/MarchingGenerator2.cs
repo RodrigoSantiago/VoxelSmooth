@@ -89,15 +89,52 @@ public class MarchingGenerator2 : MeshGenerator {
 				    GetTriangles(tables, justTest, x, y, z + 1, trianglesE[4], normalsE[4]);
 				    GetTriangles(tables, justTest, x, y, z - 1, trianglesE[5], normalsE[5]);
 				    
-				    //Calculate Cross Normals
 				    // Get normal from sharing same vertex, IF, share 13+12, it has to share ate least another point to join 13 normal too
 				    for (int i = 0; i < 12; i++) {
-					    int edge1 = triangles[i * 3];
-					    int edge2 = triangles[i * 3 + 1];
-					    int edge3 = triangles[i * 3 + 2];
-					    Vector3 n = normals[i];
-					    // Cada Edge pode pegar 2 proximos
+					    if (triangles[i * 3] < 0) break;
 					    
+					    int[] edges = {triangles[i * 3], triangles[i * 3 + 1], triangles[i * 3 + 2]};
+					    Vector3[] n = {normals[i], normals[i], normals[i]};
+					    
+					    for (int eIndex = 0; eIndex < 3; eIndex++) {
+						    for (int j = 0; j < 12; j++) {
+							    if (j == i) continue;
+						    
+							    int subEdge1 = triangles[j * 3];
+							    int subEdge2 = triangles[j * 3 + 1];
+							    int subEdge3 = triangles[j * 3 + 2];
+						    
+							    if (subEdge1 < 0) break;
+							
+							    if (subEdge1 == edges[eIndex] || subEdge2 == edges[eIndex] || subEdge3 == edges[eIndex]) {
+								    n[eIndex] += normals[j];
+							    }
+						    }
+
+						    for (int k = 0; k < 2; k++) {
+							    if (edgeNear[edges[eIndex], k * 2] > -1) {
+								    int mirror = edgeNear[edges[eIndex], k * 2 + 1];
+								    for (int j = 0; j < 12; j++) {
+									    int subEdge1 = trianglesE[edgeNear[edges[eIndex], k * 2]][j * 3];
+									    int subEdge2 = trianglesE[edgeNear[edges[eIndex], k * 2]][j * 3 + 1];
+									    int subEdge3 = trianglesE[edgeNear[edges[eIndex], k * 2]][j * 3 + 2];
+						    
+									    if (subEdge1 < 0) break;
+
+									    if (subEdge1 == mirror || subEdge2 == mirror || subEdge3 == mirror) {
+										    n[eIndex] += normalsE[edgeNear[edges[eIndex], k * 2]][j];
+									    }
+								    }
+							    }
+						    }
+
+						    n[eIndex] = n[eIndex].normalized;
+					    }
+					    
+					    AddTriangle(x, y, z,
+						    edgeVertex[triangles[3 * i]],
+						    edgeVertex[triangles[3 * i + 1]],
+						    edgeVertex[triangles[3 * i + 2]], n[0], n[1], n[2]);
 				    }
 			    }
 		    }
@@ -117,6 +154,36 @@ public class MarchingGenerator2 : MeshGenerator {
 	    {3, 10, 0, 8},
 	    {2, 9, 0, 11},
 	    {1, 10, 2, 8},
+	    
+	    {-1, -1, -1, -1},  		// 0
+	    {5, 19+12, 3, 7+12}, 	// 1
+	    {-1, -1, -1, -1},  		// 2
+	    {5, 21+12, 1, 5+12},  	// 3
+	    {5, 22+12, -1, -1},  	// 4
+	    {5, 23+12, 0, 3+12},  	// 5
+	    {-1, -1, -1, -1},  		// 6
+	    {5, 25+12, 2, 1+12},  	// 7
+	    {-1, -1, -1, -1},  		// 8
+	    
+	    {1, 11+12, 3, 15+12},  	// 9
+	    {3, 16+12, -1, -1},  	// 10
+	    {0, 9+12, 3, 17+12},  	// 11
+	    {1, 14+12, -1, -1},  	// 12
+	    {-1, -1, -1, -1},  		// 13
+	    {0, 12+12, -1, -1},  	// 14
+	    {1, 17+12, 2, 9+12},  	// 15
+	    {2, 10+12, -1, -1},  	// 16
+	    {0, 15+12, 2, 11+12},  	// 17
+	    
+	    {-1, -1, -1, -1},  		// 18
+	    {3, 25+12, 4, 1+12},  	// 19
+	    {-1, -1, -1, -1},  		// 20
+	    {1, 23+12, 4, 3+12}, 	// 21
+	    {4, 4+12, -1, -1},  	// 22
+	    {0, 21+12, 4, 5+12}, 	// 23
+	    {-1, -1, -1, -1},  		// 24
+	    {4, 7+12, 2, 19+12},  	// 25
+	    {-1, -1, -1, -1},  		// 26
     };
 
     public Vector3 CalculateNormal(Vector3 p1, Vector3 p2, Vector3 p3) {
@@ -190,10 +257,10 @@ public class MarchingGenerator2 : MeshGenerator {
 		    for (int i = 0; i < 8; i++) {
 			    if (triangles[3 * i] < 0) break;
 
-			    AddTriangle(x, y, z,
+			    /*AddTriangle(x, y, z,
 				    edgeVertex[triangles[3 * i]],
 				    edgeVertex[triangles[3 * i + 1]],
-				    edgeVertex[triangles[3 * i + 2]]);
+				    edgeVertex[triangles[3 * i + 2]]);*/
 		    }
 	    } else {
 		    for (int i = 0; i < 6; i++) {
@@ -205,10 +272,10 @@ public class MarchingGenerator2 : MeshGenerator {
 			    triangles[3 * i + 1] = TriangleConnectionTable[flagIndex, 3 * i + 1];
 			    triangles[3 * i + 2] = TriangleConnectionTable[flagIndex, 3 * i + 2];
 
-			    AddTriangle(x, y, z,
+			    /*AddTriangle(x, y, z,
 				    edgeVertex[TriangleConnectionTable[flagIndex, 3 * i]],
 				    edgeVertex[TriangleConnectionTable[flagIndex, 3 * i + 1]],
-				    edgeVertex[TriangleConnectionTable[flagIndex, 3 * i + 2]]);
+				    edgeVertex[TriangleConnectionTable[flagIndex, 3 * i + 2]]);*/
 		    }
 	    }
 
@@ -306,11 +373,16 @@ public class MarchingGenerator2 : MeshGenerator {
 	    }
     }
     
+    public void AddTriangle(int x, int y, int z, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 n1, Vector3 n2, Vector3 n3) {
+	    Vector3 cp = new Vector3(x, y, z);
+	    p1 = p1 + cp;
+	    p2 = p2 + cp;
+	    p3 = p3 + cp;
+	    meshEmitter.AddTriangle(p1, p2, p3, n1, n2, n3);
+    }
+    
     public void AddTriangle(int x, int y, int z, Vector3 p1, Vector3 p2, Vector3 p3) {
 	    Vector3 cp = new Vector3(x, y, z);
-	    //p1 = (p1 * 0.85f) + cp + Vector3.one * 0.075f;
-	    //p2 = (p2 * 0.85f) + cp + Vector3.one * 0.075f;
-	    //p3 = (p3 * 0.85f) + cp + Vector3.one * 0.075f;
 	    p1 = p1 + cp;
 	    p2 = p2 + cp;
 	    p3 = p3 + cp;

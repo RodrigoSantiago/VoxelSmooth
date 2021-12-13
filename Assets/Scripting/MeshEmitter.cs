@@ -29,6 +29,18 @@ public class MeshEmitter {
         return -1;
     }
     
+    public void AddTriangle(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 n1, Vector3 n2, Vector3 n3) {
+        triangles.Add(points.Count);
+        points.Add(p1);
+        normals.Add(n1);
+        triangles.Add(points.Count);
+        points.Add(p2);
+        normals.Add(n2);
+        triangles.Add(points.Count);
+        points.Add(p3);
+        normals.Add(n3);
+    }
+    
     public void AddTriangle(Vector3 p1, Vector3 p2, Vector3 p3) {
         triangles.Add(points.Count);
         points.Add(p1);
