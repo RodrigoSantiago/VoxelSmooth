@@ -80,7 +80,7 @@ public class PluginRounding : MonoBehaviour, PluginGenerator {
             
         } else if (algorithm == Algor.MARCHING) {
             var generator = new MarchingGenerator(chunk.Width, chunk.Height, chunk.Length);
-            emitter = new MeshEmitter(true);
+            emitter = new MeshEmitter(false);
             generator.Generate(chunk, emitter);
         } else if (algorithm == Algor.MARCHING2) {
             var generator = new MarchingGenerator2(chunk.Width, chunk.Height, chunk.Length);
